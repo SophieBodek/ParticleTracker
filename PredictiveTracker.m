@@ -30,7 +30,7 @@ function [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,t
 % plotted. If noisy==2, each movie frame is also saved to disk as an image.
 % Requires ParticleFinder.m; also requires read_uncompressed_avi.m for use
 % with .avi movies. This file can be downloaded from
-% http://leviathan.eng.yale.edu/software.
+% https://web.stanford.edu/~nto/software_tracking.shtml.
 
 % Written by Nicholas T. Ouellette September 2010. 
 % Updated by Douglas H. Kelley 13 April 2011 to plot tracks. 

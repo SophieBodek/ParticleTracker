@@ -7,7 +7,7 @@ function bg=BackgroundImage(inputnames,outputname)
 % file; specify the movie in "inputnames" (e.g., '0*.png' or 'stack.tif' 
 % or 'movie.avi'). To specify an output format, include an extension in 
 % "outputname"; '.tif' is used by default. This file can be downloaded 
-% from http://leviathan.eng.yale.edu/software. Requires 
+% from https://web.stanford.edu/~nto/software_tracking.shtml. Requires 
 % read_uncompressed_avi.m for use with .avi movies. 
 
 % Written 6 April 2010 by Doug Kelley. 

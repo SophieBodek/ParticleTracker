@@ -7,7 +7,7 @@ function [vort,x,y,t,tr]=Vorticities(vtracks,framerange,noisy)
 % is produced. The input must be a struct array of the form produced by 
 % PredictiveTracker.m.  Specify "framerange" as a two-element vector: 
 % [starttime endtime]. See also Velocities.m, Divergences.m. This file 
-% can be downloaded from http://leviathan.eng.yale.edu/software.
+% can be downloaded from https://web.stanford.edu/~nto/software_tracking.shtml.
 
 % Written 17 May 2011 by Douglas H. Kelley.
 % Fixed frame range in title when using default 5 August 2011. 

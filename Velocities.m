@@ -7,7 +7,7 @@ function [u,v,x,y,t,tr]=Velocities(vtracks,framerange,noisy)
 % produced. The input must be a structure of the form produced by 
 % PredictiveTracker.m. Specify "framerange" as a two-element vector: 
 % [starttime endtime]. This file can be downloaded from 
-% http://leviathan.eng.yale.edu/software.
+% https://web.stanford.edu/~nto/software_tracking.shtml.
 
 % Written 13 April 2011 by Douglas H. Kelley.
 % Fixed frame range in title when using default 1 August 2011. 

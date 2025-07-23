@@ -7,7 +7,7 @@ function [div,x,y,t,tr]=Divergences(vtracks,framerange,noisy)
 % produced. The input must be a struct array of the form produced by 
 % PredictiveTracker.m. Specify "framerange" as a two-element vector: 
 % [starttime endtime]. See also Velocities.m, Vorticities.m. This file can 
-% be downloaded from http://leviathan.eng.yale.edu/software.
+% be downloaded from https://web.stanford.edu/~nto/software_tracking.shtml.
 
 % Written 17 May 2011 by Douglas H. Kelley.
 % Fixed frame range in title when using default 5 August 2011. 

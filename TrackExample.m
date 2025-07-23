@@ -1,7 +1,7 @@
 % TrackExample.m, written 13 February 2012 by Doug Kelley, walks the user
 % through the use of the particle tracking function PredictiveTracker.m 
 % and the associated functions BackgroundImage.m and Velocities.m. This file 
-% can be downloaded from http://leviathan.eng.yale.edu/software.
+% can be downloaded from https://web.stanford.edu/~nto/software_tracking.shtml.
 
 clear all
 
@@ -9,8 +9,8 @@ fprintf('\n');
 disp('Welcome to particle tracking! This script, "TrackExample.m" will walk')
 disp('you through a simple example of tracking particles using BackgroundImage.m, ')
 disp('PredictiveTracker.m, and Velocities.m. All have been developed by ')
-disp('Nicholas T. Ouellette and Douglas H. Kelley at Yale University and are ')
-disp('available from http://leviathan.eng.yale.edu/software. ')
+disp('Nicholas T. Ouellette (Stanford University) and Douglas H. Kelley (University of ')
+disp('Rochester) and are available from https://web.stanford.edu/~nto/software_tracking.shtml. ')
 input('Press enter to continue. ');
 
 fprintf('\n');
@@ -128,7 +128,7 @@ Urms = mean(sqrt( u.^2+v.^2 ))
 fprintf('\n');
 disp('That''s the end of our example. The tracks you created are still in memory,')
 disp('so feel free to experiment and analyze the data more. The current version of')
-disp('this software can be downloaded from http://leviathan.eng.yale.edu/software.')
+disp('this software can be downloaded from https://web.stanford.edu/~nto/software_tracking.shtml.')
 disp('This software is freely available; we ask that it be credited when modified')
 disp('or passed along, and that publications resulting from the use of this software')
 disp('cite D. H. Kelley and N. T. Ouellette, "Using particle tracking to measure ')
