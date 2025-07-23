@@ -87,9 +87,17 @@ end
 % -=- Find particles in all frames -=-------------------------------------
 [x,y,t,ang]=ParticleFinder(inputnames,threshold,framerange,[], ...
     bground_name,minarea,invert,0);
-[tt,ends]=unique(t);
-begins=circshift(ends,[1 0])+1;
-begins(1)=1;
+    
+T=min(t):max(t);
+[tt,endsind]=unique(t,'last');
+[tt,beginsind]=unique(t,'first');
+ends=nan(length(T),1);
+begins=ends;
+ends(tt)=endsind;
+begins(tt)=beginsind;
+ends(isnan(ends))=-1; %frames with no particles
+begins(isnan(begins))=1; %frames with no particles
+tt=T;
 Nf=numel(tt);
 if Nf < (2*fitwidth+1)
     error(['Sorry, found too few files named ' inputnames '.'])

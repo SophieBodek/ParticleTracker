@@ -114,7 +114,7 @@ else
     color_depth=2^(movinfo.BitDepth);
     ht=movinfo.Height;
     wd=movinfo.Width;
-    for ii=1:numel(names);
+    for ii=1:numel(names)
         if strcmp(fullfile(filepath,names(ii).name),bground_name)
             names(ii)=[]; % don't try to track the background file
             break
