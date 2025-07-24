@@ -8,7 +8,7 @@ clear all
 fprintf('\n');
 disp('Welcome to particle tracking! This script, "TrackExample.m" will walk ')
 disp('you through a simple example of tracking particles using BackgroundImage.m, ')
-disp('PredictiveTracker.m, and Velocities.m. All have been developed by ')
+disp('PredictiveTracker.m, Velocities.m, and longtracks.m. All have been developed by ')
 disp('Nicholas T. Ouellette (Stanford University) and Douglas H. Kelley (University of ')
 disp('Rochester) and are available from https://web.stanford.edu/~nto/software_tracking.shtml. ')
 input('Press enter to continue. ')
@@ -69,13 +69,13 @@ disp('(''background.tif''). We''ll choose minarea = 1 -- that is, we expect ')
 disp('particles to be single pixels. In this movie particles are bright, so we ')
 disp('don''t want to invert (invert = 0), and we''ll ask to see a movie showing ')
 disp('the results (noisy = 1). The outputs are "vtracks" (a struct array containing ')
-disp('the tracks), "ntr" (the number of tracks), "lm" (the mean track length), and ')
+disp('the tracks), "ntracks" (the number of tracks), "lmean" (the mean track length), and ')
 disp('"lrms" (the root-mean-square track length). PredictiveTracker will report its ')
 disp('progress as it goes. Press enter to run this command:') 
-disp('   [vtracks,ntr,lm,lrms] = ...')
+disp('   [vtracks,ntracks,lmean,lrms] = ...')
 input('       PredictiveTracker(''TrackExample/0*.tif'',10,8,''TrackExample/background.tif'',1,0,1); ');
-[vtracks,ntr,lm,lrms] = ...
-    PredictiveTracker('TrackExample/0*.tif',10,8,'TrackExample/background.tif',1,0,1);
+[vtracks,ntracks,lmean,lrms] = ...
+    PredictiveTracker('TrackExample/0*.tif',10,8,'TrackExample/background.tif',1,0,1); 
 fprintf('\n');
 
 disp('A figure appears as requested, and the movie plays back with particle tracks ')
@@ -114,7 +114,7 @@ fprintf('\n');
 disp('We''ll ask for data from all frames ( framerange = [0 inf] ), and we do want a ')
 disp('plot (noisy = 1). Press enter to run this command: ')
 input('   [u,v,x,y,t]=Velocities(vtracks,[0 inf],1); ')
-[u,v,x,y,t]=Velocities(vtracks,[0 inf],1);
+[u,v,x,y,t,tr]=Velocities(vtracks,[0 inf],1);
 
 fprintf('\n');
 disp('If you zoom in, you''ll see that each particle is represented by a ')
@@ -124,6 +124,20 @@ disp('wise) which is often convenient. Press enter to calculate the root- ')
 disp('mean-square velocity with this command: ')
 input('   Urms = mean(sqrt( u.^2+v.^2 )) ');
 Urms = mean(sqrt( u.^2+v.^2 ))
+
+fprintf('\n');
+disp('Additionally, we can display all tracks over a given length (i.e., number of frames) ')
+disp('using the "longtracks.m" function. The input must be sorted trackwise and have trackindex, ')
+disp('x, and y as the first three columns. These are all given as outputs by Velocities. ')
+input('Let''s press enter to sort our tracks... ')
+tracks = sortrows([tr x y], 1);
+
+fprintf('\n');
+disp('In addition to the sorted tracks, the longtracks function needs a minimum track length ')
+disp('(minlength = 20), and whether we want to show the plot (noisy = 1). It also returns simple ')
+disp('statistics about track lengths (similar metrics as PredictiveTracker.m).')
+input('   [nlong,ntracks,lmean,lrms,lmax] = longtracks(tracks,20,1)')
+[nlong,ntracks,lmean,lrms,lmax]=longtracks(tracks,20,1);
 
 fprintf('\n');
 disp('That''s the end of our example. The tracks you created are still in memory, ')
