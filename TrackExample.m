@@ -72,10 +72,10 @@ disp('the results (noisy = 1). The outputs are "vtracks" (a struct array contain
 disp('the tracks), "ntracks" (the number of tracks), "lmean" (the mean track length), and ')
 disp('"lrms" (the root-mean-square track length). PredictiveTracker will report its ')
 disp('progress as it goes. Press enter to run this command:') 
-disp('   [vtracks,ntr,lm,lrms] = ...')
+disp('   [vtracks,ntracks,lmean,lrms] = ...')
 input('       PredictiveTracker(''TrackExample/0*.tif'',10,8,''TrackExample/background.tif'',1,0,1); ');
-[vtracks,ntr,lm,lrms] = ...
-    PredictiveTracker('TrackExample/0*.tif',10,8,'TrackExample/background.tif',1,0,0); %final argument is noisy
+[vtracks,ntracks,lmean,lrms] = ...
+    PredictiveTracker('TrackExample/0*.tif',10,8,'TrackExample/background.tif',1,0,1); 
 fprintf('\n');
 
 disp('A figure appears as requested, and the movie plays back with particle tracks ')
@@ -127,15 +127,15 @@ Urms = mean(sqrt( u.^2+v.^2 ))
 
 fprintf('\n');
 disp('Additionally, we can display all tracks over a given length (i.e., number of frames) ')
-disp('using the longtracks.m function. The input must be sorted trackwise and have trackindex, ')
-disp('x, and y as the first three columns. These are all given as outputs by Velocities.m. ')
-input('Let"s start by sorting our tracks: ')
+disp('using the "longtracks.m" function. The input must be sorted trackwise and have trackindex, ')
+disp('x, and y as the first three columns. These are all given as outputs by Velocities. ')
+input('Let''s press enter to sort our tracks... ')
 tracks = sortrows([tr x y], 1);
 
 fprintf('\n');
 disp('In addition to the sorted tracks, the longtracks function needs a minimum track length ')
 disp('(minlength = 20), and whether we want to show the plot (noisy = 1). It also returns simple ')
-disp('statistics about track lengths.')
+disp('statistics about track lengths (similar metrics as PredictiveTracker.m).')
 input('   [nlong,ntracks,lmean,lrms,lmax] = longtracks(tracks,20,1)')
 [nlong,ntracks,lmean,lrms,lmax]=longtracks(tracks,20,1);
 

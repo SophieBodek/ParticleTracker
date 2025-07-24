@@ -56,7 +56,7 @@ if readwhole % For smaller .gdf files, read & plot all at once.
     if noisy
         figure;
         h=axes;
-        set(h,'nextplot','add');
+        hold(h, 'on');
         for ii=1:numel(begins)
             ind=begins(ii):ends(ii);
             if is3D
@@ -115,11 +115,11 @@ if readwhole % For smaller .gdf files, read & plot all at once.
 %    end % while ~feof(fidin)
 %end % if readwhole
  
-nlong=sum(lengths>=minlength);
-ntracks=numel(lengths);
-lmean=mean(lengths);
-lrms=sqrt(mean(lengths.^2));
-lmax=max(lengths);
+nlong=sum(lengths>=minlength); %number of tracks longer than minlength
+ntracks=numel(lengths); %total number of tracks
+lmean=mean(lengths); %mean track length 
+lrms=sqrt(mean(lengths.^2)); %root-mean-square track length
+lmax=max(lengths); %maximum track length
 
 if noisy 
     axis tight
