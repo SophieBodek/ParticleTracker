@@ -6,7 +6,7 @@ This particle-tracking algorithm was developed for Lagrangian Particle Tracking 
 ## Tutorial
 The TrackExample.m file is a script that walks the user through basic functions of the predictive particle-tracking algorithm using an example movie of particles in a 2-D flow. 
 
-![](https://github.com/SophieBodek/ParticleTracker/blob/main/particle_track_mov.gif)
+![](particle_track_mov.gif)
 
 ## Citation
 This particle tracking code is based on the following publications: 
