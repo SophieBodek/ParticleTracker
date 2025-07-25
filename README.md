@@ -1,10 +1,12 @@
 # ParticleTracker
-Multi-frame predictive particle-tracking algorithm for 2-D systems implemented using MATLAB. This code was written by Nicholas T. Ouelette (Stanford) and Douglas H. Kelley (University of Rochester) and is available in its original form here: https://web.stanford.edu/~nto/software_tracking.shtml
+Multi-frame predictive particle-tracking algorithm for 2-D systems implemented using MATLAB. This code was written by Nicholas T. Ouellette (Stanford) and Douglas H. Kelley (University of Rochester) and is available in its original form here: https://web.stanford.edu/~nto/software_tracking.shtml
 
 This particle-tracking algorithm was developed for Lagrangian Particle Tracking for flow visualization, but is broadly applicable to a variety of systems and has been used to follow the motion of animals, insects, and sediments. 
 
 ## Tutorial
 The TrackExample.m file is a script that walks the user through basic functions of the predictive particle-tracking algorithm using an example movie of particles in a 2-D flow. 
+
+![](https://github.com/SophieBodek/ParticleTracker/blob/main/particle_track_mov.gif)
 
 ## Citation
 This particle tracking code is based on the following publications: 
