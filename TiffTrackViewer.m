@@ -27,7 +27,7 @@ classdef TiffTrackViewer < handle
     %Projections are currently capped at taking 30 seconds max to avoid
     %stalling Matlab.
     %
-    %This code is adapted from TiffViewer/Movieviewer, written by
+    %This code is adapted from TiffViewer/MovieViewer, written by
     %Joseph M. Stujenske (under GPL-3.0 copyright license) and is 
     %avaible in the Matlab_FastTiffReadWrite Github repository 
     %(accessed 15 July 2025). This current version was written with
@@ -114,7 +114,7 @@ classdef TiffTrackViewer < handle
             obj.setupTimer();
             obj.addDimensionText(dims); % Add dimension text display
             obj.displayFrame(1);
-        end
+        end %END TiffTrackViewer
         
         function displayFrame(obj,opt)
             if nargin < 2, opt = 0; end
@@ -127,442 +127,442 @@ classdef TiffTrackViewer < handle
                 end
             end
             obj.updateTrackDisplay(); % Update track overlay
-        end
+        end %END displayFrame
 
         function allimages = mm_proj(obj, type)
             allimages = mm_proj([], [], obj, type);
-        end
+        end %END allimages
 
-    % Toggle track display
-    function toggleTracks(obj)
-        % Check if track data is available
-        if isempty(obj.vtracks)
-            fprintf('No track data provided\n');
-            msgbox('No track data provided. Please load vtracks when calling the viewer.', ...
-                   'Track Display', 'warn');
-            return;
-        end
-        
-        % Check if filtered tracks are available after length filtering
-        if isempty(obj.filtered_vtracks)
-            fprintf('No tracks meet the minimum length criteria\n');
-            fprintf('Original tracks: %d, Minimum length: %d, Tracks after filtering: %d\n', ...
-                    length(obj.vtracks), obj.min_track_length, length(obj.filtered_vtracks));
-            
-            msg = sprintf(['No tracks meet the minimum length criteria.\n\n' ...
-                          'Original tracks: %d\n' ...
-                          'Minimum length: %d frames\n' ...
-                          'Tracks after filtering: %d\n\n' ...
-                          'Try reducing the minimum track length.'], ...
-                          length(obj.vtracks), obj.min_track_length, length(obj.filtered_vtracks));
-            
-            msgbox(msg, 'Track Display', 'warn');
-            return;
-        end
-        
         % Toggle track display
-        obj.show_tracks = ~obj.show_tracks;
-        if ~obj.show_tracks
-            obj.clearTracks();
-            fprintf('Track display turned OFF\n');
-        else
-            fprintf('Track display turned ON\n');
-            fprintf('Displaying %d tracks (filtered from %d original tracks)\n', ...
-                    length(obj.filtered_vtracks), length(obj.vtracks));
-        end
-        obj.updateTrackDisplay();
-    end
-
-    % Clear all track lines from display
-    function clearTracks(obj)
-        for ch = 1:obj.n_ch
-            if ~isempty(obj.track_handles) && length(obj.track_handles) >= ch
-                delete(obj.track_handles{ch}(ishandle(obj.track_handles{ch})));
-                obj.track_handles{ch} = [];
+        function toggleTracks(obj)
+            % Check if track data is available
+            if isempty(obj.vtracks)
+                fprintf('No track data provided\n');
+                msgbox('No track data provided. Please load vtracks when calling the viewer.', ...
+                       'Track Display', 'warn');
+                return;
             end
-        end
-    end
-
-    % Filter tracks by minimum length
-    function filterTracksByLength(obj)
-        if isempty(obj.vtracks)
-            obj.filtered_vtracks = [];
-            return;
-        end
         
-        % Calculate track lengths and filter
-        track_lengths = arrayfun(@(x) x.len, obj.vtracks);
-        valid_tracks = track_lengths >= obj.min_track_length;
-        
-        obj.filtered_vtracks = obj.vtracks(valid_tracks);
-        
-        % Display filtering results
-        fprintf('Track filtering: %d/%d tracks retained (min length: %d)\n', ...
-            sum(valid_tracks), length(obj.vtracks), obj.min_track_length);
-    end
-    
-    % Update minimum track length filter
-    function setMinTrackLength(obj, min_length)
-        obj.min_track_length = min_length;
-        obj.filterTracksByLength();
-        if obj.show_tracks
-            obj.updateTrackDisplay();
-        end
-    end
-
-    function updateTrackDisplay(obj)
-        if isempty(obj.filtered_vtracks) || ~obj.show_tracks % Use filtered_vtracks instead of vtracks
-            obj.clearFutureTrajectories(); % Clear future trajectories when tracks are hidden
-            return;
-        end
-        
-        obj.clearTracks();
-        obj.clearFutureTrajectories(); % Clear future trajectories when updating normal tracks
-        
-        colorlist = lines(7);
-        Ncolors = size(colorlist, 1);
-        ntracks = numel(obj.filtered_vtracks); % Use filtered_vtracks
-        
-        % Calculate frame range for each track
-        framerange = NaN(ntracks, 2);
-        for jj = 1:ntracks
-            framerange(jj, 1) = obj.filtered_vtracks(jj).T(1); % Use filtered_vtracks
-            framerange(jj, 2) = obj.filtered_vtracks(jj).T(end); % Use filtered_vtracks
-        end
-        
-        % Find tracks that should be visible in current frame
-        ind = find((framerange(:, 1) <= obj.CurrFrame) & (framerange(:, 2) >= obj.CurrFrame));
-        
-        % Plot tracks for each channel
-        for ch = 1:obj.n_ch
-            obj.track_handles{ch} = [];
+            % Check if filtered tracks are available after length filtering
+            if isempty(obj.filtered_vtracks)
+                fprintf('No tracks meet the minimum length criteria\n');
+                fprintf('Original tracks: %d, Minimum length: %d, Tracks after filtering: %d\n', ...
+                        length(obj.vtracks), obj.min_track_length, length(obj.filtered_vtracks));
             
-            for jj = 1:numel(ind)
-                track_idx = ind(jj);
-                col = colorlist(mod(track_idx - 1, Ncolors) + 1, :);
-                
-                % Plot from beginning of track to current frame
-                indt = 1:(obj.CurrFrame - framerange(track_idx, 1) + 1);
-                
-                if ~isempty(indt) && indt(end) <= length(obj.filtered_vtracks(track_idx).X)
-                    hold(obj.ax{ch}, 'on');
-                    h = plot(obj.ax{ch}, ...
-                        obj.filtered_vtracks(track_idx).X(indt), ...
-                        obj.filtered_vtracks(track_idx).Y(indt), ...
-                        '-', 'Color', col, 'LineWidth', 1);
-                    
+                msg = sprintf(['No tracks meet the minimum length criteria.\n\n' ...
+                               'Original tracks: %d\n' ...
+                               'Minimum length: %d frames\n' ...
+                               'Tracks after filtering: %d\n\n' ...
+                               'Try reducing the minimum track length.'], ...
+                            length(obj.vtracks), obj.min_track_length, length(obj.filtered_vtracks));
+            
+                msgbox(msg, 'Track Display', 'warn');
+                return;
+            end
+        
+            % Toggle track display
+            obj.show_tracks = ~obj.show_tracks;
+            if ~obj.show_tracks
+                obj.clearTracks();
+                fprintf('Track display turned OFF\n');
+            else
+                fprintf('Track display turned ON\n');
+                fprintf('Displaying %d tracks (filtered from %d original tracks)\n', ...
+                        length(obj.filtered_vtracks), length(obj.vtracks));
+            end
+            obj.updateTrackDisplay();
+        end %END toggleTracks
 
-                    % Determine track ID: use ID field if it exists, otherwise use index
-                    if isfield(obj.filtered_vtracks, 'ID') && ~isempty(obj.filtered_vtracks(track_idx).ID)
-                        track_id = obj.filtered_vtracks(track_idx).ID;
-                    else
-                        track_id = track_idx; % Use index (of filtered vtracks) as fallback
-                    end
-                    
-                    % Store track information in the line's UserData
-                    set(h, 'UserData', struct('TrackID', track_id, 'TrackIndex', track_idx));
-                    
-                    % Add click callback
-                    set(h, 'ButtonDownFcn', @(src, event) obj.onTrackClick(src, event));
-                    
-                    % Make the line more clickable by increasing hit test area
-                    set(h, 'LineWidth', 2, 'PickableParts', 'visible');
-                    
-                    obj.track_handles{ch} = [obj.track_handles{ch}, h];
-                    hold(obj.ax{ch}, 'off');
+        % Clear all track lines from display
+        function clearTracks(obj)
+            for ch = 1:obj.n_ch
+                if ~isempty(obj.track_handles) && length(obj.track_handles) >= ch
+                    delete(obj.track_handles{ch}(ishandle(obj.track_handles{ch})));
+                    obj.track_handles{ch} = [];
                 end
             end
-        end
-    end
+        end %END clearTracks
 
-    % NEW METHOD: Show future trajectory as dashed line
-    function showFutureTrajectory(obj, track_info, track_idx)
-        % Clear any existing future trajectories
-        obj.clearFutureTrajectories();
+        % Filter tracks by minimum length
+        function filterTracksByLength(obj)
+            if isempty(obj.vtracks)
+                obj.filtered_vtracks = [];
+                return;
+            end
+        
+            % Calculate track lengths and filter
+            track_lengths = arrayfun(@(x) x.len, obj.vtracks);
+            valid_tracks = track_lengths >= obj.min_track_length;
+        
+            obj.filtered_vtracks = obj.vtracks(valid_tracks);
+        
+            % Display filtering results
+            fprintf('Track filtering: %d/%d tracks retained (min length: %d)\n', ...
+                    sum(valid_tracks), length(obj.vtracks), obj.min_track_length);
+        end %END filterTracksByLength
+    
+        % Update minimum track length filter
+        function setMinTrackLength(obj, min_length)
+            obj.min_track_length = min_length;
+            obj.filterTracksByLength();
+            if obj.show_tracks
+                obj.updateTrackDisplay();
+            end
+        end %END setMinTrackLength
 
-        % Initialize future_track_handles if needed
-        if isempty(obj.future_track_handles)
-            obj.future_track_handles = cell(1, obj.n_ch);
-        end
+        function updateTrackDisplay(obj)
+            if isempty(obj.filtered_vtracks) || ~obj.show_tracks % Use filtered_vtracks instead of vtracks
+                obj.clearFutureTrajectories(); % Clear future trajectories when tracks are hidden
+                return;
+            end
         
-        % Ensure we have enough cells for all channels
-        while length(obj.future_track_handles) < obj.n_ch
-            obj.future_track_handles{end+1} = [];
-        end
-            
-        % Get track timing information
-        track_frames = track_info.T;
-        current_frame_idx = find(track_frames == obj.CurrFrame);
+            obj.clearTracks();
+            obj.clearFutureTrajectories(); % Clear future trajectories when updating normal tracks
         
-        % If current frame is not exactly on a track frame, find the next frame
-        if isempty(current_frame_idx)
-            future_frame_idx = find(track_frames > obj.CurrFrame, 1, 'first');
-        else
-            future_frame_idx = current_frame_idx + 1;
-        end
-        
-        % Only show future if there are future points
-        if ~isempty(future_frame_idx) && future_frame_idx <= length(track_info.X)
-            future_indices = future_frame_idx:length(track_info.X);
-            future_X = track_info.X(future_indices);
-            future_Y = track_info.Y(future_indices);
-            
-            % Get color for this track (same as the solid line)
             colorlist = lines(7);
             Ncolors = size(colorlist, 1);
-            col = colorlist(mod(track_idx - 1, Ncolors) + 1, :);
-            
-            % Plot future trajectory on each channel
+            ntracks = numel(obj.filtered_vtracks); % Use filtered_vtracks
+        
+            % Calculate frame range for each track
+            framerange = NaN(ntracks, 2);
+            for jj = 1:ntracks
+                framerange(jj, 1) = obj.filtered_vtracks(jj).T(1); % Use filtered_vtracks
+                framerange(jj, 2) = obj.filtered_vtracks(jj).T(end); % Use filtered_vtracks
+            end
+        
+            % Find tracks that should be visible in current frame
+            ind = find((framerange(:, 1) <= obj.CurrFrame) & (framerange(:, 2) >= obj.CurrFrame));
+        
+            % Plot tracks for each channel
             for ch = 1:obj.n_ch
-                if ~isempty(future_X) && ~isempty(future_Y)
-                    hold(obj.ax{ch}, 'on');
-                    h_future = plot(obj.ax{ch}, future_X, future_Y, ...
-                                   '--', 'Color', col, 'LineWidth', 2, ...
-                                   'DisplayName', 'Future Trajectory');
-                    obj.future_track_handles{ch} = [obj.future_track_handles{ch}, h_future];
-                    hold(obj.ax{ch}, 'off');
+                obj.track_handles{ch} = [];
+            
+                for jj = 1:numel(ind)
+                    track_idx = ind(jj);
+                    col = colorlist(mod(track_idx - 1, Ncolors) + 1, :);
+                
+                    % Plot from beginning of track to current frame
+                    indt = 1:(obj.CurrFrame - framerange(track_idx, 1) + 1);
+                
+                    if ~isempty(indt) && indt(end) <= length(obj.filtered_vtracks(track_idx).X)
+                        hold(obj.ax{ch}, 'on');
+                        h = plot(obj.ax{ch}, ...
+                            obj.filtered_vtracks(track_idx).X(indt), ...
+                            obj.filtered_vtracks(track_idx).Y(indt), ...
+                            '-', 'Color', col, 'LineWidth', 1);
+                    
 
-                    % Initialize channel cell if needed
-                    if isempty(obj.future_track_handles{ch})
-                        obj.future_track_handles{ch} = [];
+                        % Determine track ID: use ID field if it exists, otherwise use index
+                        if isfield(obj.filtered_vtracks, 'ID') && ~isempty(obj.filtered_vtracks(track_idx).ID)
+                            track_id = obj.filtered_vtracks(track_idx).ID;
+                        else
+                            track_id = track_idx; % Use index (of filtered vtracks) as fallback
+                        end
+                    
+                        % Store track information in the line's UserData
+                        set(h, 'UserData', struct('TrackID', track_id, 'TrackIndex', track_idx));
+                    
+                        % Add click callback
+                        set(h, 'ButtonDownFcn', @(src, event) obj.onTrackClick(src, event));
+                    
+                        % Make the line more clickable by increasing hit test area
+                        set(h, 'LineWidth', 2, 'PickableParts', 'visible');
+                    
+                        obj.track_handles{ch} = [obj.track_handles{ch}, h];
+                        hold(obj.ax{ch}, 'off');
                     end
                 end
-                obj.future_track_handles{ch} = [obj.future_track_handles{ch}, h_future];
-                hold(obj.ax{ch}, 'off');
+            end
+        end %END updateTrackDisplay
+
+        % Show future trajectory as dashed line
+        function showFutureTrajectory(obj, track_info, track_idx)
+            % Clear any existing future trajectories
+            obj.clearFutureTrajectories();
+
+            % Initialize future_track_handles if needed
+            if isempty(obj.future_track_handles)
+                obj.future_track_handles = cell(1, obj.n_ch);
+            end
+        
+            % Ensure we have enough cells for all channels
+            while length(obj.future_track_handles) < obj.n_ch
+                obj.future_track_handles{end+1} = [];
             end
             
-            fprintf('Future trajectory displayed (%d future points)\n', length(future_indices));
-        else
-            fprintf('No future trajectory to display (track ends at or before current frame)\n');
-        end
-    end
-
-    % NEW METHOD: Clear future trajectory lines
-    function clearFutureTrajectories(obj)
-        if isempty(obj.future_track_handles)
-            return;
-        end
+            % Get track timing information
+            track_frames = track_info.T;
+            current_frame_idx = find(track_frames == obj.CurrFrame);
         
-        for ch = 1:min(length(obj.future_track_handles), obj.n_ch)
-            if ~isempty(obj.future_track_handles{ch})
-                % Delete valid handles
-                valid_handles = obj.future_track_handles{ch}(ishandle(obj.future_track_handles{ch}));
-                if ~isempty(valid_handles)
-                    delete(valid_handles);
+            % If current frame is not exactly on a track frame, find the next frame
+            if isempty(current_frame_idx)
+                future_frame_idx = find(track_frames > obj.CurrFrame, 1, 'first');
+            else
+                future_frame_idx = current_frame_idx + 1;
+            end
+        
+            % Only show future if there are future points
+            if ~isempty(future_frame_idx) && future_frame_idx <= length(track_info.X)
+                future_indices = future_frame_idx:length(track_info.X);
+                future_X = track_info.X(future_indices);
+                future_Y = track_info.Y(future_indices);
+            
+                % Get color for this track (same as the solid line)
+                colorlist = lines(7);
+                Ncolors = size(colorlist, 1);
+                col = colorlist(mod(track_idx - 1, Ncolors) + 1, :);
+            
+                % Plot future trajectory on each channel
+                for ch = 1:obj.n_ch
+                    if ~isempty(future_X) && ~isempty(future_Y)
+                        hold(obj.ax{ch}, 'on');
+                        h_future = plot(obj.ax{ch}, future_X, future_Y, ...
+                                        '--', 'Color', col, 'LineWidth', 2, ...
+                                        'DisplayName', 'Future Trajectory');
+                        obj.future_track_handles{ch} = [obj.future_track_handles{ch}, h_future];
+                        hold(obj.ax{ch}, 'off');
+
+                        % Initialize channel cell if needed
+                        if isempty(obj.future_track_handles{ch})
+                            obj.future_track_handles{ch} = [];
+                        end
+                    end
+                    obj.future_track_handles{ch} = [obj.future_track_handles{ch}, h_future];
+                    hold(obj.ax{ch}, 'off');
                 end
-                obj.future_track_handles{ch} = [];
+            
+                fprintf('Future trajectory displayed (%d future points)\n', length(future_indices));
+            else
+                fprintf('No future trajectory to display (track ends at or before current frame)\n');
             end
-        end
-end
+        end %END showFutureTrajectory
 
-    % Handle track click events
-    function onTrackClick(obj, src, event)
-        % Reset all track line widths to normal and clear any future trajectories
-        obj.clearFutureTrajectories();
-        for ch = 1:obj.n_ch
-            if ~isempty(obj.track_handles{ch})
-                set(obj.track_handles{ch}, 'LineWidth', 2);
-            end
-        end
-        
-        % Highlight the clicked track
-        set(src, 'LineWidth', 4);
-        
-        % Get track information from the clicked line
-        trackData = get(src, 'UserData');
-        track_id = trackData.TrackID;
-        track_idx = trackData.TrackIndex;
-        
-        % Get additional track information
-        track_info = obj.filtered_vtracks(track_idx);
-        track_length = track_info.len;
-        start_frame = track_info.T(1);
-        end_frame = track_info.T(end);
-        
-        % Determine if we're using actual ID or index
-        if isfield(obj.filtered_vtracks, 'ID') && ~isempty(obj.filtered_vtracks(track_idx).ID)
-            id_type = 'ID (Original)';
-        else
-            id_type = 'Index (Filtered)';
-        end
-
-        % Print to command window
-        fprintf('Clicked Track %s: %d (Length: %d frames, Frames %d-%d)\n', ...
-                id_type, track_id, track_length, start_frame, end_frame);
-
-        % Show future trajectory if current frame is before track end
-        if obj.CurrFrame < end_frame
-            obj.showFutureTrajectory(track_info, track_idx);
-        end
-        
-        % Create custom dialog with plot option
-        obj.showTrackInfoDialog(track_info, track_id, track_idx, id_type, track_length, start_frame, end_frame);
-    end
-
-    % NEW METHOD: Show track information dialog with plot option
-    function showTrackInfoDialog(obj, track_info, track_id, track_idx, id_type, track_length, start_frame, end_frame)
-        % Calculate quick statistics for display
-        % if isfield(track_info, 'U') && isfield(track_info, 'V')
-        %     U = track_info.U;
-        %     V = track_info.V;
-        %     vel = sqrt(U.^2 + V.^2);
-        %     mean_speed = nanmean(vel);
-        %     max_speed = nanmax(vel);
-        %     speed_info = sprintf('\nMean Speed: %.2f px/frame\nMax Speed: %.2f px/frame', mean_speed, max_speed);
-        % else
-        %     speed_info = '\nVelocity data not available';
-        % end
-        
-        % Create the dialog message
-        msg = sprintf(['Track %s: %d\n' ...
-                      'Track Length: %d frames\n' ...
-                      'Start Frame: %d\n' ...
-                      'End Frame: %d\n' ...
-                      'Current Frame: %d%s\n\n' ...
-                      'Would you like to plot track\n' ...
-                      'position and velocity timeseries?'], ...
-                      id_type, track_id, track_length, start_frame, end_frame, obj.CurrFrame);%, speed_info);
-        
-        % Create custom dialog with Yes/No buttons
-        choice = questdlg(msg, ...
-                         'Track Information', ...
-                         'Plot Trajectories', 'Close', 'Close');
-        
-        % Handle the user's choice
-        switch choice
-            case 'Plot Trajectories'
-                obj.plotTrackDetails(track_info, track_id, id_type);
-            case 'Close'
-                % Do nothing, just close the dialog
+        % Clear future trajectory lines
+        function clearFutureTrajectories(obj)
+            if isempty(obj.future_track_handles)
                 return;
-        end
-    end
-    
-    % NEW METHOD: Create detailed trajectory and velocity plots
-    function plotTrackDetails(obj, track_info, track_id, id_type)
-        % Extract track data
-        len = track_info.len;
-        X = track_info.X;
-        Y = track_info.Y;
-        T = track_info.T;
+            end
         
-        % Calculate displacements
-        dX = [nan diff(X)];
-        dY = [nan diff(Y)];
-        displacement = sqrt(dX.^2 + dY.^2);
-        
-        % Extract or calculate velocities
-        if isfield(track_info, 'U') && isfield(track_info, 'V')
-            U = track_info.U;
-            V = track_info.V;
-        else
-            % Calculate velocities if not available (backward difference)
-            dt = 1; %timestep = 1 frame
-            U = [nan diff(X)./dt]; % X velocity - pad with NaN at start
-            V = [nan diff(Y)./dt]; % Y velocity - pad with NaN at start
-            fprintf('Note: Velocities calculated from positions (U and V fields not found)\n');
-        end
-        
-        vel = sqrt(U.^2 + V.^2); % speed
-        
-        % Calculate statistics
-        mean_speed = nanmean(vel);
-        max_speed = nanmax(vel);
-        total_distance = nansum(displacement);
-        net_displacement = sqrt((X(end)-X(1))^2 + (Y(end)-Y(1))^2);
-        
-        % Print statistics
-        fprintf('Track %d Statistics:\n', track_id);
-        fprintf('Mean speed: %.2f px/frame\n', mean_speed);
-        fprintf('Max speed: %.2f px/frame\n', max_speed);
-        fprintf('Total distance: %.2f px\n', total_distance);
-        fprintf('Net displacement: %.2f px\n', net_displacement);
-        
-        % Create the detailed plot
-        figure('Name', sprintf('Track %s %d Details', id_type, track_id), ...
-               'NumberTitle', 'off');
-        tiledlayout(5,1, 'TileSpacing', 'compact', 'Padding', 'compact');
-        set(gcf, 'Position', get(0, 'Screensize'));
-        
-        % X position and displacement
-        nexttile
-        yyaxis left
-        plot(T, X, 'k-', 'LineWidth', 2, 'DisplayName', 'X Position [px]');
-        hold on
-        ylabel('X Position [px]', 'FontSize', 12);
-        set(gca, 'YColor', 'k');
-        yyaxis right
-        plot(T, dX, 'Color', '#1ad1ff', 'LineWidth', 1.5, 'DisplayName', 'X Displacement [px]');
-        ylabel('X Displacement [px]', 'FontSize', 12);
-        set(gca, 'YColor', '#1ad1ff');
-        title(sprintf('Track %s %d: X Position & Displacement', id_type, track_id), 'FontSize', 12);
-        grid on; grid minor;
-        
-        % Velocity, X direction
-        nexttile
-        plot(T, U, 'Color', '#e60000', 'LineWidth', 1.5, 'DisplayName', 'Velocity, U');
-        ylabel('Velocity [px/frame]', 'FontSize', 12);
-        set(gca, 'YColor', '#e60000');
-        title('X Velocity', 'FontSize', 12);
-        yline(nanmean(U), '--k', sprintf('Mean [px/frame]: %.2f', nanmean(U)));
-        grid on; grid minor;
-        
-        % Y position and displacement
-        nexttile
-        yyaxis left
-        plot(T, Y, 'k-', 'LineWidth', 2, 'DisplayName', 'Y Position [px]');
-        hold on
-        ylabel('Y Position [px]', 'FontSize', 12);
-        set(gca, 'YColor', 'k');
-        yyaxis right
-        plot(T, dY, 'Color', '#1ad1ff', 'LineWidth', 1.5, 'DisplayName', 'Y Displacement [px]');
-        ylabel('Y Displacement [px]', 'FontSize', 12);
-        set(gca, 'YColor', '#1ad1ff');
-        title('Y Position & Displacement', 'FontSize', 12);
-        grid on; grid minor;
-        
-        % Velocity, Y direction
-        nexttile
-        plot(T, V, 'Color', '#e60000', 'LineWidth', 1.5, 'DisplayName', 'Velocity, V');
-        ylabel('Velocity [px/frame]', 'FontSize', 12);
-        set(gca, 'YColor', '#e60000');
-        title('Y Velocity', 'FontSize', 12);
-        yline(nanmean(V), '--k', sprintf('Mean [px/frame]: %.2f', nanmean(V)));
-        grid on; grid minor;
-        
-        % Net displacement and speed
-        nexttile
-        yyaxis left
-        plot(T, displacement, 'Color', '#0000cc', 'LineWidth', 1.5, 'DisplayName', 'Net Displacement [px]');
-        hold on
-        ylabel('Net Displacement [px]', 'FontSize', 12);
-        set(gca, 'YColor', '#0000cc');
-        yyaxis right
-        plot(T, vel, 'Color', 'r', 'LineWidth', 1.5, 'DisplayName', 'Speed [px]');
-        ylabel('Speed [px/frame]', 'FontSize', 12);
-        set(gca, 'YColor', 'r');
-        yline(mean_speed, '--r', sprintf('Mean [px/frame]: %.2f', mean_speed));
-        title('Net Displacement & Speed', 'FontSize', 12);
-        grid on; grid minor;
-        
-        xlabel('Time [frame no.]', 'FontSize', 12);
-        
-        % % Add text box with statistics
-        % annotation('textbox', [0.02, 0.02, 0.3, 0.15], ...
-        %            'String', sprintf(['Track %s: %d\n' ...
-        %                             'Length: %d frames\n' ...
-        %                             'Mean Speed: %.2f px/frame\n' ...
-        %                             'Max Speed: %.2f px/frame\n' ...
-        %                             'Total Distance: %.2f px\n' ...
-        %                             'Net Displacement: %.2f px'], ...
-        %                             id_type, track_id, len, mean_speed, max_speed, ...
-        %                             total_distance, net_displacement), ...
-        %            'FontSize', 10, ...
-        %            'BackgroundColor', 'white', ...
-        %            'EdgeColor', 'black');
-    end
+            for ch = 1:min(length(obj.future_track_handles), obj.n_ch)
+                if ~isempty(obj.future_track_handles{ch})
+                    % Delete valid handles
+                    valid_handles = obj.future_track_handles{ch}(ishandle(obj.future_track_handles{ch}));
+                    if ~isempty(valid_handles)
+                        delete(valid_handles);
+                    end
+                    obj.future_track_handles{ch} = [];
+                end
+            end
+        end %END clearFutureTrajectories
 
-end
+        % Handle track click events
+        function onTrackClick(obj, src, event)
+            % Reset all track line widths to normal and clear any future trajectories
+            obj.clearFutureTrajectories();
+            for ch = 1:obj.n_ch
+                if ~isempty(obj.track_handles{ch})
+                    set(obj.track_handles{ch}, 'LineWidth', 2);
+                end
+            end
+        
+            % Highlight the clicked track
+            set(src, 'LineWidth', 4);
+        
+            % Get track information from the clicked line
+            trackData = get(src, 'UserData');
+            track_id = trackData.TrackID;
+            track_idx = trackData.TrackIndex;
+        
+            % Get additional track information
+            track_info = obj.filtered_vtracks(track_idx);
+            track_length = track_info.len;
+            start_frame = track_info.T(1);
+            end_frame = track_info.T(end);
+        
+            % Determine if we're using actual ID or index
+            if isfield(obj.filtered_vtracks, 'ID') && ~isempty(obj.filtered_vtracks(track_idx).ID)
+                id_type = 'ID (Original)';
+            else
+                id_type = 'Index (Filtered)';
+            end
+
+            % Print to command window
+            fprintf('Clicked Track %s: %d (Length: %d frames, Frames %d-%d)\n', ...
+                    id_type, track_id, track_length, start_frame, end_frame);
+
+            % Show future trajectory if current frame is before track end
+            if obj.CurrFrame < end_frame
+                obj.showFutureTrajectory(track_info, track_idx);
+            end
+        
+            % Create custom dialog with plot option
+            obj.showTrackInfoDialog(track_info, track_id, track_idx, id_type, track_length, start_frame, end_frame);
+        end %End onTrackClick
+
+        % Show track information dialog with plot option
+        function showTrackInfoDialog(obj, track_info, track_id, track_idx, id_type, track_length, start_frame, end_frame)
+            % Calculate quick statistics for display
+            % if isfield(track_info, 'U') && isfield(track_info, 'V')
+            %     U = track_info.U;
+            %     V = track_info.V;
+            %     vel = sqrt(U.^2 + V.^2);
+            %     mean_speed = nanmean(vel);
+            %     max_speed = nanmax(vel);
+            %     speed_info = sprintf('\nMean Speed: %.2f px/frame\nMax Speed: %.2f px/frame', mean_speed, max_speed);
+            % else
+            %     speed_info = '\nVelocity data not available';
+            % end
+        
+            % Create the dialog message
+            msg = sprintf(['Track %s: %d\n' ...
+                           'Track Length: %d frames\n' ...
+                           'Start Frame: %d\n' ...
+                           'End Frame: %d\n' ...
+                           'Current Frame: %d%s\n\n' ...
+                           'Would you like to plot track\n' ...
+                           'position and velocity timeseries?'], ...
+                         id_type, track_id, track_length, start_frame, end_frame, ...
+                         obj.CurrFrame);%, speed_info);
+        
+            % Create custom dialog with Yes/No buttons
+            choice = questdlg(msg, 'Track Information', ...
+                              'Plot Trajectories', 'Close', 'Close');
+        
+            % Handle the user's choice
+            switch choice
+                case 'Plot Trajectories'
+                    obj.plotTrackDetails(track_info, track_id, id_type);
+                case 'Close'
+                    % Do nothing, just close the dialog
+                    return;
+            end
+        end %END showTrackInfoDialog
+    
+        % Create trajectory position and velocity plots
+        function plotTrackDetails(obj, track_info, track_id, id_type)
+            % Extract track data
+            len = track_info.len;
+            X = track_info.X;
+            Y = track_info.Y;
+            T = track_info.T;
+        
+            % Calculate displacements
+            dX = [nan diff(X)];
+            dY = [nan diff(Y)];
+            displacement = sqrt(dX.^2 + dY.^2);
+        
+            % Extract or calculate velocities
+            if isfield(track_info, 'U') && isfield(track_info, 'V')
+                U = track_info.U;
+                V = track_info.V;
+            else
+                % Calculate velocities if not available (backward difference)
+                dt = 1; %timestep = 1 frame
+                U = [nan diff(X)./dt]; % X velocity - pad with NaN at start
+                V = [nan diff(Y)./dt]; % Y velocity - pad with NaN at start
+                fprintf('Note: Velocities calculated from positions (U and V fields not found)\n');
+            end
+        
+            vel = sqrt(U.^2 + V.^2); % speed
+        
+            % Calculate statistics
+            mean_speed = nanmean(vel);
+            max_speed = nanmax(vel);
+            total_distance = nansum(displacement);
+            net_displacement = sqrt((X(end)-X(1))^2 + (Y(end)-Y(1))^2);
+        
+            % Print statistics
+            fprintf('Track %d Statistics:\n', track_id);
+            fprintf('Mean speed: %.2f px/frame\n', mean_speed);
+            fprintf('Max speed: %.2f px/frame\n', max_speed);
+            fprintf('Total distance: %.2f px\n', total_distance);
+            fprintf('Net displacement: %.2f px\n', net_displacement);
+        
+            % Create the detailed plot
+            figure('Name', sprintf('Track %s %d Details', id_type, track_id), ...
+                   'NumberTitle', 'off');
+            tiledlayout(5,1, 'TileSpacing', 'compact', 'Padding', 'compact');
+            set(gcf, 'Position', get(0, 'Screensize'));
+        
+            % X position and displacement
+            nexttile
+            yyaxis left
+            plot(T, X, 'k-', 'LineWidth', 2, 'DisplayName', 'X Position [px]');
+            hold on
+            ylabel('X Position [px]', 'FontSize', 12);
+            set(gca, 'YColor', 'k');
+            yyaxis right
+            plot(T, dX, 'Color', '#1ad1ff', 'LineWidth', 1.5, 'DisplayName', 'X Displacement [px]');
+            ylabel('X Displacement [px]', 'FontSize', 12);
+            set(gca, 'YColor', '#1ad1ff');
+            title(sprintf('Track %s %d: X Position & Displacement', id_type, track_id), 'FontSize', 12);
+            grid on; grid minor;
+        
+            % Velocity, X direction
+            nexttile
+            plot(T, U, 'Color', '#e60000', 'LineWidth', 1.5, 'DisplayName', 'Velocity, U');
+            ylabel('Velocity [px/frame]', 'FontSize', 12);
+            set(gca, 'YColor', '#e60000');
+            title('X Velocity', 'FontSize', 12);
+            yline(nanmean(U), '--k', sprintf('Mean [px/frame]: %.2f', nanmean(U)));
+            grid on; grid minor;
+        
+            % Y position and displacement
+            nexttile
+            yyaxis left
+            plot(T, Y, 'k-', 'LineWidth', 2, 'DisplayName', 'Y Position [px]');
+            hold on
+            ylabel('Y Position [px]', 'FontSize', 12);
+            set(gca, 'YColor', 'k');
+            yyaxis right
+            plot(T, dY, 'Color', '#1ad1ff', 'LineWidth', 1.5, 'DisplayName', 'Y Displacement [px]');
+            ylabel('Y Displacement [px]', 'FontSize', 12);
+            set(gca, 'YColor', '#1ad1ff');
+            title('Y Position & Displacement', 'FontSize', 12);
+            grid on; grid minor;
+        
+            % Velocity, Y direction
+            nexttile
+            plot(T, V, 'Color', '#e60000', 'LineWidth', 1.5, 'DisplayName', 'Velocity, V');
+            ylabel('Velocity [px/frame]', 'FontSize', 12);
+            set(gca, 'YColor', '#e60000');
+            title('Y Velocity', 'FontSize', 12);
+            yline(nanmean(V), '--k', sprintf('Mean [px/frame]: %.2f', nanmean(V)));
+            grid on; grid minor;
+        
+            % Net displacement and speed
+            nexttile
+            yyaxis left
+            plot(T, displacement, 'Color', '#0000cc', 'LineWidth', 1.5, 'DisplayName', 'Net Displacement [px]');
+            hold on
+            ylabel('Net Displacement [px]', 'FontSize', 12);
+            set(gca, 'YColor', '#0000cc');
+            yyaxis right
+            plot(T, vel, 'Color', 'r', 'LineWidth', 1.5, 'DisplayName', 'Speed [px]');
+            ylabel('Speed [px/frame]', 'FontSize', 12);
+            set(gca, 'YColor', 'r');
+            yline(mean_speed, '--r', sprintf('Mean [px/frame]: %.2f', mean_speed));
+            title('Net Displacement & Speed', 'FontSize', 12);
+            grid on; grid minor;
+        
+            xlabel('Time [frame no.]', 'FontSize', 12);
+        
+            % % Add text box with statistics
+            % annotation('textbox', [0.02, 0.02, 0.3, 0.15], ...
+            %            'String', sprintf(['Track %s: %d\n' ...
+            %                             'Length: %d frames\n' ...
+            %                             'Mean Speed: %.2f px/frame\n' ...
+            %                             'Max Speed: %.2f px/frame\n' ...
+            %                             'Total Distance: %.2f px\n' ...
+            %                             'Net Displacement: %.2f px'], ...
+            %                             id_type, track_id, len, mean_speed, max_speed, ...
+            %                             total_distance, net_displacement), ...
+            %            'FontSize', 10, ...
+            %            'BackgroundColor', 'white', ...
+            %            'EdgeColor', 'black');
+        end %END plotTrackDetails
+
+    end
     
     methods (Access = private)
         function resolveFileName(obj, filename)
@@ -575,7 +575,7 @@ end
             else
                 obj.filename = [];
             end
-        end
+        end %END resolveFileName
 
         function setNumFrames(obj,info)
             if isempty(info)
@@ -583,7 +583,7 @@ end
             else
                 obj.numFrames=length(info);
             end
-        end
+        end %END setNumFrames
         
         function info = readTiffInfo(obj,filename)
             if nargin<2
@@ -601,7 +601,7 @@ end
             else
                 info = [];
             end
-        end
+        end %END readTiffInfo
         
         function uneven_flag = checkUnevenFlag(~, info)
             if length(info) > 3 && info(2).StripOffsets(1) - info(1).StripOffsets(1) ~= info(3).StripOffsets(1) - info(2).StripOffsets(1)
@@ -611,7 +611,7 @@ end
             else
                 uneven_flag = 0;
             end
-        end
+        end %END uneven_flag
         
         function setupMemoryMapping(obj, filename, n_ch, info, uneven_flag)
             [~,~,ext]=fileparts(filename);
@@ -643,7 +643,7 @@ end
                 end
             end
             n_ch=obj.n_ch;
-        end
+        end %END setupMemoryMapping
 
         function handleMemoryMapping(obj, filename, n_ch, info)
             [~,~,ext]=fileparts(filename);
@@ -661,12 +661,12 @@ end
                 otherwise
                     obj.map_type = 'file';
             end
-        end
+        end %END handleMemoryMapping
         
         function setupFileMapping(obj, filename, info, n_ch)
             % obj.memmap = set_up_file(filename, info, n_ch);
             % obj.memmap_data = obj.memmap.Data;
-        end
+        end %END setupFileMapping
         
         function setupFromMatrix(obj, filename, n_ch)
             % filename = permute(filename, [2 1 3]);
@@ -676,18 +676,18 @@ end
             obj.memmap_matrix_data = filename;
             obj.map_type = 'mem';
             obj.type='matrix';
-        end
+        end %END setupFromMatrix
 
         % function datavals = processChannels(~, filename, height, width, n_ch)
         %     datavals = [];
         %     for ch_rep = 1:n_ch
         %         datavals = cat(2, datavals, mat2cell(filename(:, :, ch_rep:n_ch:end), height, width, ones(size(filename, 3) / n_ch, 1)));
         %     end
-        % end
+        % end %END processChannels
         
         function ch_names = generateChannelNames(~, n_ch)
             ch_names = arrayfun(@(x) ['channel', num2str(x)], 1:n_ch, 'UniformOutput', false);
-        end
+        end %END generateChannelNames
         
         function setupFigure(obj, file, ext)
             obj.figure = figure('Units', 'normalized', 'Position', [0 0 1 1], ...
@@ -695,7 +695,7 @@ end
                 'CloseRequestFcn', @(x, event) obj.closeFigure(x, event), ...
                 'Name', [file, ext], 'NumberTitle', 'off', 'MenuBar', 'none', ...
                 'ToolBar', 'none');
-        end
+        end %END setupFigure
         
         function setupAxes(obj, dims, n_ch)
             obj.n_ch = n_ch;
@@ -711,7 +711,7 @@ end
             linkaxes(cat(1, obj.ax{:}));
             % Initialize future track handles for the number of channels
             obj.future_track_handles = cell(1, obj.n_ch); 
-        end
+        end %END setupAxes
 
         function dims = getDimensions(obj, info)
             if ~isempty(info)
@@ -719,7 +719,7 @@ end
             else
                 dims=[obj.height obj.width];
             end
-        end
+        end %END getDimensions
 
         % Add text displaying image dimensions in bottom right corner
         function addDimensionText(obj, dims)
@@ -741,7 +741,7 @@ end
                 'FontSize', 10, ...
                 'HorizontalAlignment', 'right', ...
                 'Parent', obj.figure);
-        end
+        end %END addDimensionText
 
         function setupSlider(tv)
         data=guidata(tv.figure);
@@ -769,7 +769,7 @@ end
             obj.fps = 30;
             data.timer = timer('ExecutionMode', 'fixedRate', 'TimerFcn', {@play_vid, obj}, 'Period', max(round(1 / obj.fps, 3), .001));
             guidata(obj.figure, data);
-        end
+        end %END setupTimer
 
         function closeFigure(obj, ~, ~)
             data = guidata(obj.figure);
@@ -777,14 +777,14 @@ end
             try;stop(data.timer);end
             try;obj.cleanupMemoryMapping();end
             delete(obj.figure);
-        end
+        end %END closeFigure
         
         function cleanupMemoryMapping(obj)
             obj.memmap_data = [];
             obj.memmap_matrix_data = [];
             obj.memmap = [];
             obj.memmap_matrix = [];
-        end
+        end %END cleanupMemoryMapping
         
         function validateFrame(obj)
             if nargin < 2 || isempty(frame)
@@ -793,7 +793,7 @@ end
             if obj.CurrFrame > obj.numFrames
                 obj.CurrFrame = obj.numFrames;
             end
-        end
+        end %END validateFrame
 
         function updateFrameFromMemory(obj, channel, opt)
             data=guidata(obj.figure);
@@ -829,7 +829,7 @@ end
             end
             obj.image_object{channel}=obj.ax{channel}.Children;
             guidata(obj.figure,data);
-        end
+        end %END updateFrameFromMemory
         
         function updateFrameFromFile(obj, channel, opt)
             data=guidata(obj.figure);
@@ -850,7 +850,7 @@ end
                 axis(obj.ax{channel}, 'image'); % Maintain aspect ratio
             end
             guidata(obj.figure,data);
-        end
+        end %END updateFrameFromFile
 
 function tv = setupTiffMapping(tv, filename, n_ch, info)
     % setupTiffMapping - Set up memory mapping for TIFF files
@@ -899,7 +899,7 @@ function tv = setupTiffMapping(tv, filename, n_ch, info)
             end
         end
     end
-end
+end %END setupTiffMapping
 
 function tv = setupBinaryMapping(tv, filename, n_ch, framesize, form)
     % setupBinaryMapping - Set up memory mapping for binary files
@@ -939,43 +939,42 @@ function tv = setupBinaryMapping(tv, filename, n_ch, framesize, form)
     tv.memmap_matrix_data = tv.memmap_matrix.Data.allchans;    
     % Number of frames is determined by the binary file size
     tv.numFrames = n / tv.n_ch;
-end
+end %END setupBinaryMapping
 
     end
 end
 
 function makeplot(hObject,event,tv)
-data=guidata(tv.figure);
-tv.CurrFrame=round(get(hObject,'Value'));
-set(data.h.edit,'String',num2str(tv.CurrFrame));
-guidata(tv.figure,data);
-%displayFrame(tv);
-tv.displayFrame(); % Changed to use object method
-end
+    data=guidata(tv.figure);
+    tv.CurrFrame=round(get(hObject,'Value'));
+    set(data.h.edit,'String',num2str(tv.CurrFrame));
+    guidata(tv.figure,data);
+    %displayFrame(tv);
+    tv.displayFrame(); % Changed to use object method
+end %END makeplot
 
 function makeplot2(hObject,event,tv)
-data=guidata(tv.figure);
-curval=get(hObject,'String');
-try
-    obj.CurrFrame=max(min(round(str2double(get(hObject,'String'))),tv.numFrames),1);
-    hObject.String=num2str(obj.CurrFrame);
-catch
-    hObject.String=curval;
-    return;
-end
-set(data.h.slide,'Value',obj.CurrFrame);
-guidata(tv.figure,data);
-%displayFrame(tv);
-tv.displayFrame(); % Changed to use object method
-end
+    data=guidata(tv.figure);
+    curval=get(hObject,'String');
+    try
+        obj.CurrFrame=max(min(round(str2double(get(hObject,'String'))),tv.numFrames),1);
+        hObject.String=num2str(obj.CurrFrame);
+    catch
+        hObject.String=curval;
+        return;
+    end
+    set(data.h.slide,'Value',obj.CurrFrame);
+    guidata(tv.figure,data);
+    %displayFrame(tv);
+    tv.displayFrame(); % Changed to use object method
+end %END makeplot2
 
 function fps_but_down(hObject,event,tv)
-data=guidata(tv.figure);
-answer=inputdlg('Input FPS for Video Playback');
-tv.fps=str2double(answer{1});
-guidata(tv.figure,data);
-
-end
+    data=guidata(tv.figure);
+    answer=inputdlg('Input FPS for Video Playback');
+    tv.fps=str2double(answer{1});
+    guidata(tv.figure,data);
+end %END fps_but_down
 
 function allimages = mm_proj(~, ~, tv, type)
     color_name = {'Red', 'Green', 'Blue'};
@@ -1027,7 +1026,7 @@ function allimages = mm_proj(~, ~, tv, type)
     
     % Reset cursor to default
     set([tv.figure, f_out], 'pointer', 'arrow');
-end
+end %END allimages
 
 % Function to compute projection for each channel
 function projection = compute_projection(tv, type, ch, max_time, f_out, sub_handle_popup, n_subplots)
@@ -1038,7 +1037,7 @@ function projection = compute_projection(tv, type, ch, max_time, f_out, sub_hand
     else
         projection = process_memmap(tv, ch, type, max_time, f_out, sub_handle_popup, n_subplots, 'memmap_matrix_data');
     end
-end
+end %END compute_projection
 
 % Function to process memory-mapped data for projections
 function P = process_memmap(tv, ch, type, max_time, f_out, sub_handle_popup, n_subplots, data_type)
@@ -1101,7 +1100,7 @@ function P = process_memmap(tv, ch, type, max_time, f_out, sub_handle_popup, n_s
     else
         error('Unknown data_type specified. Use ''memmap_data'' or ''memmap_matrix_data''.');
     end
-end
+end %END process_memmap
 
 % Function to display an image
 function display_image(image_data, f_out, subplot_handle, img_type, title_name)
@@ -1123,49 +1122,49 @@ function merged_image = merge_channels(P, img_type)
         % Add a third zero-filled channel for RGB display if only 2 channels
         merged_image = cat(3, merged_image, zeros(size(merged_image, 1, 2), class(merged_image)));
     end
-end
+end %END merged_image
 
 function offset_field=get_offset_field(info)
-if isfield(info,'StripOffsets')
-    offset_field='StripOffsets';
-elseif isfield(info,'TileOffsets')
-    offset_field='TileOffsets';
-else
-    error('Neither strip nor tile format.')
-end
-end
+    if isfield(info,'StripOffsets')
+        offset_field='StripOffsets';
+    elseif isfield(info,'TileOffsets')
+        offset_field='TileOffsets';
+    else
+        error('Neither strip nor tile format.')
+    end
+end %END offset_field
 
 function play_vid(hObject,event,tv)
-data=guidata(tv.figure);
-frame_rate=1./hObject.InstantPeriod;
-data.increment=max(floor(tv.fps/frame_rate),1);
-tv.CurrFrame=mod(tv.CurrFrame+data.increment,tv.numFrames);
-if tv.CurrFrame==0
-    tv.CurrFrame=tv.numFrames;
-end
-data.h.slide.Value=tv.CurrFrame;
-data.h.edit.String=num2str(tv.CurrFrame);
-displayFrame(tv);
-guidata(tv.figure,data);
-end
+    data=guidata(tv.figure);
+    frame_rate=1./hObject.InstantPeriod;
+    data.increment=max(floor(tv.fps/frame_rate),1);
+    tv.CurrFrame=mod(tv.CurrFrame+data.increment,tv.numFrames);
+    if tv.CurrFrame==0
+        tv.CurrFrame=tv.numFrames;
+    end
+    data.h.slide.Value=tv.CurrFrame;
+    data.h.edit.String=num2str(tv.CurrFrame);
+    displayFrame(tv);
+    guidata(tv.figure,data);
+end %END play_vid
 
 function play_but_down(hObject,event,tv)
-data=guidata(tv.figure);
-if tv.CurrFrame==tv.numFrames
-    tv.CurrFrame=1;
-end
-guidata(tv.figure,data);
-set(data.timer,'Period',max(round(1/tv.fps,3),.001),'TimerFcn',{@play_vid,tv});
-start(data.timer);
-guidata(tv.figure,data);
-set(hObject,'callback',@(x,evt) stop_but_down(x,evt,tv));
-set(hObject,'String','=');
-end
+    data=guidata(tv.figure);
+    if tv.CurrFrame==tv.numFrames
+        tv.CurrFrame=1;
+    end
+    guidata(tv.figure,data);
+    set(data.timer,'Period',max(round(1/tv.fps,3),.001),'TimerFcn',{@play_vid,tv});
+    start(data.timer);
+    guidata(tv.figure,data);
+    set(hObject,'callback',@(x,evt) stop_but_down(x,evt,tv));
+    set(hObject,'String','=');
+end %END plau_but_down
 
 function stop_but_down(hObject,event,tv)
-data=guidata(tv.figure);
-stop(data.timer);
-set(hObject,'callback',@(x,evt) play_but_down(x,evt,tv));
-set(hObject,'String','>');
-guidata(tv.figure,data);
-end
+    data=guidata(tv.figure);
+    stop(data.timer);
+    set(hObject,'callback',@(x,evt) play_but_down(x,evt,tv));
+    set(hObject,'String','>');
+    guidata(tv.figure,data);
+end %END stop_but_down
