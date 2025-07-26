@@ -50,6 +50,8 @@ function [imData,info]=bigread4(path_to_file,sframe,num2read,info)
 %Joseph Stujenske 2021, v1.2, added compatibility with Tiffs that use Tiles
 %rather than strips.
 %
+%This code is available under the GPL-3.0 copyright license and is reproduced
+%from the Matlab_FastTiffReadWrite Github repository [accessed 15 July 2025].
 if ~exist(path_to_file,'file')
     error(['File ',path_to_file,' not found.'])
 end

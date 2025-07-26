@@ -22,10 +22,16 @@ classdef TiffTrackViewer < handle
     %Set FPS - set video speed in frames per second
     %Tracks - toggle particle tracks on and off; can click on tracks to display track info
     %Max P - Maximum projection with a little noise removal first
-    %Mean P - Mean projection
+    %Mean P - Mean projection (i.e., background image)
     %
     %Projections are currently capped at taking 30 seconds max to avoid
     %stalling Matlab.
+    %
+    %This code is adapted from TiffViewer/Movieviewer, written by
+    %Joseph M. Stujenske (under GPL-3.0 copyright license) and is 
+    %avaible in the Matlab_FastTiffReadWrite Github repository 
+    %(accessed 15 July 2025). This current version was written with
+    %the assistance of generative AI tools.
     %
     properties
         filename                % Name of file
