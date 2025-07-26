@@ -34,6 +34,9 @@ function [m,n_ch,info]=memory_map_tiff(filename,opt,n_ch,read_only,n_images,repl
 %e.g. for a 3 color, 5 time, 10 z level stack, specify replicates as [3,
 %5, 10] and n_ch=1;
 %
+%This code was written by Joseph M. Stujenske (under GPL-3.0 copyright
+%license) and is avaible in the Matlab_FastTiffReadWrite Github
+%repository (accessed 15 July 2025).
 
 if nargin<2 || isempty(opt)
     opt='channels';

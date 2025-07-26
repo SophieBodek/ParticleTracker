@@ -1,6 +1,9 @@
 function [info,n_tifs]=readtifftags(path_to_file,lasttag)
 % Adapted from tiff_read_header, Written by D.Kroon 31-05-2012 (see
-% copyright and license information below).
+% copyright and license information below). Current version was written
+% by Joseph M. Stujenske, available in the Matlab_FastTiffReadWrite Github
+% repository [accessed 15 July 2025].
+%
 % Reads Tiff Headers for regular or Big Tiffs
 % Assumes that all Tiffs have same header and does a fast method to figure
 % out the number of frames
