@@ -8,6 +8,7 @@
 %                      also plots particle velocity vectors
 %   -   Vorticities.m : outputs [Vort, X, Y, T, Tr] from vtracks
 %                       also plots particle vorticities
+%                       (need to update)
 %   -   Divergences.m : outputs [Div, X, Y, T, Tr] from vtracks
 %                       also plots particle divergences
 %   -   longtracks.m : plots tracks over a given length
@@ -19,7 +20,8 @@ close all
 clear all
 
 % Load vtracks structure (assumes you have already run PredictiveTracker.m elsewhere)
-load('vtracks.mat');
+%load('vtracks.mat');
+load('/Volumes/Sophie/Clam_Flume_Stress_History_Experiments/7_Experiments/Experiment_1/Control/24-09-24_Run1/53_Percent_Pump/output2/8disp_105thresh_vtracks.mat');
 
 % Use built-in plotting functionality of Velocities, Vorticities, and Divergences 
 % to visualize particles-----------------------------------------------------------------
@@ -29,15 +31,15 @@ noisy = 1; %plotting parameter : no plot = 0; plot velocity vectors = 1
 disp('Velocities : plots particle velocity vectors');
 [u,v,x,y,t,tr]=Velocities(vtracks,framerange,noisy);
 
-disp('Vorticities: plots particle vorticities')
+disp('Vorticities : plots particle vorticities')
 %[vort,~,~,~,~]=Vorticities(vtracks,framerange,noisy) %need to fix old vorticities code
 
-disp('Divergences: plots particle divergences')
+disp('Divergences : plots particle divergences')
 %[div,~,~,~,~]=Divergences(vtracks,framerange,noisy) %need to fix old divergences code
 
 % Use longtracks to view tracks over minlength -------------------------------------------
-tracks = sortrows([tr x y], 1); %need to sort data due to how function is written
-minlength = 50; %minimum track length to plot
+tracks = sortrows([tr x y], 1); %need to sort data trackwise with TR, X, Y
+minlength = 20; %minimum track length to plot
 
 fprintf('longtracks : Plots all tracks longer than %d frames.\n', minlength);
 [nlong,ntracks,lmean,lrms,lmax]=longtracks(tracks,minlength,noisy);
@@ -48,7 +50,7 @@ ids = num2cell(1:length(vtracks));
 [vtracks.ID] = deal(ids{:});
 
 % Are the images saved as a .TIFF stack? or as a series of .TIFF files?
-isStack = 2; %0 for invidiual images in a directory; 1 for .TIFF stack; 2 for both
+isStack = 1; %0 for invidiual images in a directory; 1 for .TIFF stack; 2 for both
 
 if isStack == 0 || isStack == 2     %--------- Individual .TIFF images
     im_path = 'TrackExample/0*.tif';
@@ -57,7 +59,8 @@ if isStack == 0 || isStack == 2     %--------- Individual .TIFF images
 end
 
 if isStack ==1 || isStack ==2     %--------- .TIFF stack
-    stack_name = 'TrackExampleStack.tiff';
+    %stack_name = 'TrackExampleStack.tiff';
+    stack_name = '/Volumes/Sophie/Clam_Flume_Stress_History_Experiments/7_Experiments/Experiment_1/Control/24-09-24_Run1/53_Percent_Pump/Stacked_Bed_Imagery.tiff';
     
     % Parameters for reading .TIFF stacks
     tiff_frame_start = 1; %starting frame of tiff stack
@@ -65,11 +68,11 @@ if isStack ==1 || isStack ==2     %--------- .TIFF stack
     
     TS = bigread4(stack_name, tiff_frame_start, tiff_num_frames); %load .TIFF stack
 end
-
+%%
 % Displays viewer with intuitive controls for playing images as a movie and
 % overlaying tracks, as well as plotting trajectory metrics
 n_ch = 1; %number of channels (1 if greyscale; 3 if color)
-minlen = 50;  %minimum track length
+minlen = 360;  %minimum track length; if too low, viewer gets very laggy
 
 disp('TiffTrackViewer : TIFF movie viewer and interactive track visualizer');
 if isStack == 0 %functionality more limited for directory with images
