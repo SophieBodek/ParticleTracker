@@ -852,94 +852,93 @@ classdef TiffTrackViewer < handle
             guidata(obj.figure,data);
         end %END updateFrameFromFile
 
-function tv = setupTiffMapping(tv, filename, n_ch, info)
-    % setupTiffMapping - Set up memory mapping for TIFF files
-    %
-    % Arguments:
-    %   filename - Path to the TIFF file or folder containing TIFFs
-    %   n_ch     - Number of channels
-    %
-    % Returns:
-    %   tv - Struct containing memory-mapped TIFF data and related info
+        function tv = setupTiffMapping(tv, filename, n_ch, info)
+            % setupTiffMapping - Set up memory mapping for TIFF files
+            %
+            % Arguments:
+            %   filename - Path to the TIFF file or folder containing TIFFs
+            %   n_ch     - Number of channels
+            %
+            % Returns:
+            %   tv - Struct containing memory-mapped TIFF data and related info
     
-    % Check if filename is a string (single TIFF file)
-    if ischar(filename)
-        [folder, file, ext] = fileparts(filename);
-        if isempty(ext)  % Case when we provide a folder, not a file
-            % Read all TIFF files in the folder
-            tv.memmap_data = tv.filename;
-        else
-            tv.filename = filename;
-            if nargin<3 || isempty(info)
-            info = readtifftags(filename);
-            end
-            offset_field = get_offset_field(info);
+            % Check if filename is a string (single TIFF file)
+            if ischar(filename)
+                [folder, file, ext] = fileparts(filename);
+                if isempty(ext)  % Case when we provide a folder, not a file
+                    % Read all TIFF files in the folder
+                    tv.memmap_data = tv.filename;
+                else
+                    tv.filename = filename;
+                    if nargin<3 || isempty(info)
+                        info = readtifftags(filename);
+                    end
+                    offset_field = get_offset_field(info);
             
-            % Determine if the TIFF frames have uniform offsets
-            if length(info) > 3
-                uneven_flag = info(2).(offset_field)(1) - info(1).(offset_field)(1) ~= info(3).(offset_field)(1) - info(2).(offset_field)(1);
-            else
-                uneven_flag = false;
-            end
+                    % Determine if the TIFF frames have uniform offsets
+                    if length(info) > 3
+                        uneven_flag = info(2).(offset_field)(1) - info(1).(offset_field)(1) ~= info(3).(offset_field)(1) - info(2).(offset_field)(1);
+                    else
+                        uneven_flag = false;
+                    end
             
-            if ~uneven_flag
-                tv.map_type = 'mem';
-                tv.memmap = memory_map_tiff(filename, [], n_ch, true);
-                if isfield(info, 'GapBetweenImages') && info(1).GapBetweenImages == 0
-
-                    % tv.memmap = memory_map_tiff(filename,[],n_ch,true);
-                    tv.memmap_matrix = memory_map_tiff(filename,'matrix',n_ch,true);
-                    tv.memmap_matrix_data = tv.memmap_matrix.Data.allchans;           
-                end
+                    if ~uneven_flag
+                        tv.map_type = 'mem';
+                        tv.memmap = memory_map_tiff(filename, [], n_ch, true);
+                        if isfield(info, 'GapBetweenImages') && info(1).GapBetweenImages == 0
+                            % tv.memmap = memory_map_tiff(filename,[],n_ch,true);
+                            tv.memmap_matrix = memory_map_tiff(filename,'matrix',n_ch,true);
+                            tv.memmap_matrix_data = tv.memmap_matrix.Data.allchans;           
+                        end
                 
-                tv.width = info(1).ImageWidth;
-                tv.height = info(1).ImageHeight;
-            else
-                tv.map_type = 'file';
-            end
-        end
-    end
-end %END setupTiffMapping
-
-function tv = setupBinaryMapping(tv, filename, n_ch, framesize, form)
-    % setupBinaryMapping - Set up memory mapping for binary files
-    %
-    % Arguments:
-    %   filename  - Path to the binary file
-    %   n_ch      - Number of channels
-    %   framesize - Size of each image frame as [height, width]
-    %   form      - Data format in the binary file (e.g., 'double', 'uint16')
-    %
-    % Returns:
-    %   tv - Struct containing memory-mapped binary data and related info
-
-    tv.filename = filename;
-    tv.map_type = 'mem';
-    
-    % Prepare memory mapping format for each channel
-    % format_string = cell(n_ch, 3);
-    % for ch_rep = 1:n_ch
-    %     format_string(ch_rep, :) = {form, framesize, ['channel', num2str(ch_rep)]};
-    % end
-
-    % Set up memory mapping
-
-                if isempty(tv.n_ch)
-                    userinputs = inputdlg({'Number of channels:','Height and Width (as matrix):','Data Format:'});
-                    tv.n_ch = str2double(userinputs{1});
-                    framesize = str2num(userinputs{2});
-                    tv.height=framesize(1);
-                    tv.width=framesize(2);
-                    form=userinputs{3};
+                        tv.width = info(1).ImageWidth;
+                        tv.height = info(1).ImageHeight;
+                    else
+                        tv.map_type = 'file';
+                    end
                 end
-    tv.memmap_matrix = memmapfile(filename, 'Format', {form, [framesize], 'allchans'}, 'Writable', false);
-    n=length(tv.memmap_matrix.Data);
-    tv.memmap_matrix = memmapfile(filename, 'Format', {form, [framesize n], 'allchans'}, 'Writable', false);
-    % Store mapped data
-    tv.memmap_matrix_data = tv.memmap_matrix.Data.allchans;    
-    % Number of frames is determined by the binary file size
-    tv.numFrames = n / tv.n_ch;
-end %END setupBinaryMapping
+            end
+        end %END setupTiffMapping
+
+        function tv = setupBinaryMapping(tv, filename, n_ch, framesize, form)
+            % setupBinaryMapping - Set up memory mapping for binary files
+            %
+            % Arguments:
+            %   filename  - Path to the binary file
+            %   n_ch      - Number of channels
+            %   framesize - Size of each image frame as [height, width]
+            %   form      - Data format in the binary file (e.g., 'double', 'uint16')
+            %
+            % Returns:
+            %   tv - Struct containing memory-mapped binary data and related info
+
+            tv.filename = filename;
+            tv.map_type = 'mem';
+    
+            % Prepare memory mapping format for each channel
+            % format_string = cell(n_ch, 3);
+            % for ch_rep = 1:n_ch
+            %     format_string(ch_rep, :) = {form, framesize, ['channel', num2str(ch_rep)]};
+            % end
+
+            % Set up memory mapping
+
+            if isempty(tv.n_ch)
+                userinputs = inputdlg({'Number of channels:','Height and Width (as matrix):','Data Format:'});
+                tv.n_ch = str2double(userinputs{1});
+                framesize = str2num(userinputs{2});
+                tv.height=framesize(1);
+                tv.width=framesize(2);
+                form=userinputs{3};
+            end
+            tv.memmap_matrix = memmapfile(filename, 'Format', {form, [framesize], 'allchans'}, 'Writable', false);
+            n=length(tv.memmap_matrix.Data);
+            tv.memmap_matrix = memmapfile(filename, 'Format', {form, [framesize n], 'allchans'}, 'Writable', false);
+            % Store mapped data
+            tv.memmap_matrix_data = tv.memmap_matrix.Data.allchans;    
+            % Number of frames is determined by the binary file size
+            tv.numFrames = n / tv.n_ch;
+        end %END setupBinaryMapping
 
     end
 end
