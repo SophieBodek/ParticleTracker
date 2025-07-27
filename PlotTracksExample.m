@@ -20,8 +20,7 @@ close all
 clear all
 
 % Load vtracks structure (assumes you have already run PredictiveTracker.m elsewhere)
-%load('vtracks.mat');
-load('/Volumes/Sophie/Clam_Flume_Stress_History_Experiments/7_Experiments/Experiment_1/Control/24-09-24_Run1/53_Percent_Pump/output2/8disp_105thresh_vtracks.mat');
+load('vtracks.mat');
 
 % Use built-in plotting functionality of Velocities, Vorticities, and Divergences 
 % to visualize particles-----------------------------------------------------------------
@@ -59,8 +58,7 @@ if isStack == 0 || isStack == 2     %--------- Individual .TIFF images
 end
 
 if isStack ==1 || isStack ==2     %--------- .TIFF stack
-    %stack_name = 'TrackExampleStack.tiff';
-    stack_name = '/Volumes/Sophie/Clam_Flume_Stress_History_Experiments/7_Experiments/Experiment_1/Control/24-09-24_Run1/53_Percent_Pump/Stacked_Bed_Imagery.tiff';
+    stack_name = 'TrackExampleStack.tiff';
     
     % Parameters for reading .TIFF stacks
     tiff_frame_start = 1; %starting frame of tiff stack
@@ -68,11 +66,11 @@ if isStack ==1 || isStack ==2     %--------- .TIFF stack
     
     TS = bigread4(stack_name, tiff_frame_start, tiff_num_frames); %load .TIFF stack
 end
-%%
+
 % Displays viewer with intuitive controls for playing images as a movie and
 % overlaying tracks, as well as plotting trajectory metrics
 n_ch = 1; %number of channels (1 if greyscale; 3 if color)
-minlen = 360;  %minimum track length; if too low, viewer gets very laggy
+minlen = 20;  %minimum track length; if too low, viewer gets very laggy
 
 disp('TiffTrackViewer : TIFF movie viewer and interactive track visualizer');
 if isStack == 0 %functionality more limited for directory with images
@@ -81,7 +79,7 @@ else %otherwise should display .TIFF stack
     tv = TiffTrackViewer(TS,n_ch,vtracks,minlen); 
 end
 
-%% Visualization Method 3: Predictive Tracker Movie
+%% Visualization Method : Predictive Tracker Movie
 % This function plays the same movie as the PredictiveTracker function
 %noisy = 1; %noisy = 2 saves indivual frames
 
