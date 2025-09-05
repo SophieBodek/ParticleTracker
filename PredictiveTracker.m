@@ -266,31 +266,47 @@ Av = 1.0/(0.5*filterwidth^2 * ...
 vkernel = -fitwidth:fitwidth;
 vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2);
 
+% acceleration kernel
+Aa = 1.0/(filterwidth^2 * ...
+    (sqrt(pi)*filterwidth*erf(fitwidth/filterwidth) - ...
+    2*fitwidth*exp(-fitwidth^2/filterwidth^2)));
+akernel = -fitwidth:fitwidth;
+akernel = Aa.*(akernel.^2 - filterwidth^2).*exp(-akernel.^2./filterwidth^2) ./ filterwidth^2;
+
 % loop over tracks
 if minarea==1
-    vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[]),ntracks,1);
+    vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[],'Ax',[],'Ay',[]),ntracks,1);
 else
     vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[], ...
-        'V',[],'Theta',[]),ntracks,1);
+        'V',[],'Ax',[],'Ay',[],'Theta',[]),ntracks,1);
 end
 for ii = 1:ntracks
+    % compute velocities by convolution
     u = -conv(tracks(ii).X,vkernel,'valid');
     v = -conv(tracks(ii).Y,vkernel,'valid');
+    % Compute accelerations (second derivative)
+    ax = conv(tracks(ii).X,akernel,'valid');  
+    ay = conv(tracks(ii).Y,akernel,'valid');
+
     if minarea==1
-        vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
-            'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
-            'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
-            'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
-            'U',u, ...
-            'V',v);
+        vtracks(ii).len = tracks(ii).len - 2*fitwidth;
+        vtracks(ii).X = tracks(ii).X(fitwidth+1:end-fitwidth);
+        vtracks(ii).Y = tracks(ii).Y(fitwidth+1:end-fitwidth);
+        vtracks(ii).T = tracks(ii).T(fitwidth+1:end-fitwidth);
+        vtracks(ii).U = u;
+        vtracks(ii).V = v;
+        vtracks(ii).Ax = ax;
+        vtracks(ii).Ay = ay;
     else
-        vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
-            'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
-            'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
-            'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
-            'U',u, ...
-            'V',v, ...
-            'Theta',tracks(ii).Theta(fitwidth+1:end-fitwidth));
+        vtracks(ii).len = tracks(ii).len - 2*fitwidth;
+        vtracks(ii).X = tracks(ii).X(fitwidth+1:end-fitwidth);
+        vtracks(ii).Y = tracks(ii).Y(fitwidth+1:end-fitwidth);
+        vtracks(ii).T = tracks(ii).T(fitwidth+1:end-fitwidth);
+        vtracks(ii).U = u;
+        vtracks(ii).V = v;
+        vtracks(ii).Ax = ax;
+        vtracks(ii).Ay = ay;
+        vtracks(ii).Theta = tracks(ii).Theta(fitwidth+1:end-fitwidth);
     end
 end
 

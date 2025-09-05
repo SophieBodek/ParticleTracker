@@ -8,9 +8,10 @@
 %                      also plots particle velocity vectors
 %   -   Vorticities.m : outputs [Vort, X, Y, T, Tr] from vtracks
 %                       also plots particle vorticities
-%                       (need to update)
+%                       (requires Partial Differential Equation toolbox)
 %   -   Divergences.m : outputs [Div, X, Y, T, Tr] from vtracks
 %                       also plots particle divergences
+%                        (requires Partial Differential Equation toolbox)
 %   -   longtracks.m : plots tracks over a given length
 %   -   bigread4.m : quickly loads large .TIFF stacks
 %   -   TiffTrackViewer.m : viewer for playing images as a movie with tracks overlaid
@@ -19,8 +20,12 @@
 close all
 clear all
 
+% Run the predictive tracker
+[vtracks,ntracks,lmean,lrms] = ...
+    PredictiveTracker('TrackExample/0*.tif',10,8,'TrackExample/background.tif',1,0,0);
+
 % Load vtracks structure (assumes you have already run PredictiveTracker.m elsewhere)
-load('vtracks.mat');
+%load('vtracks.mat');
 
 % Use built-in plotting functionality of Velocities, Vorticities, and Divergences 
 % to visualize particles-----------------------------------------------------------------
@@ -31,10 +36,10 @@ disp('Velocities : plots particle velocity vectors');
 [u,v,x,y,t,tr]=Velocities(vtracks,framerange,noisy);
 
 disp('Vorticities : plots particle vorticities')
-%[vort,~,~,~,~]=Vorticities(vtracks,framerange,noisy) %need to fix old vorticities code
+[vort,~,~,~,~]=Vorticities(vtracks,framerange,noisy); %need to fix old vorticities code
 
 disp('Divergences : plots particle divergences')
-%[div,~,~,~,~]=Divergences(vtracks,framerange,noisy) %need to fix old divergences code
+[div,~,~,~,~]=Divergences(vtracks,framerange,noisy); %need to fix old divergences code
 
 % Use longtracks to view tracks over minlength -------------------------------------------
 tracks = sortrows([tr x y], 1); %need to sort data trackwise with TR, X, Y
