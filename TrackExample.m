@@ -90,6 +90,7 @@ fprintf('\n');
 disp('PredictiveTracker outputs tracks as a struct array with one element per ')
 input('track. Press enter to see the form of the "vtracks" struct array. ')
 vtracks
+%save(['vtracks.mat'], 'vtracks'); %save vtracks structure if desired
 
 fprintf('\n');
 disp('Each element contains a scalar giving the track length, as well as vectors ')

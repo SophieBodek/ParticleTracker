@@ -266,14 +266,48 @@ Av = 1.0/(0.5*filterwidth^2 * ...
 vkernel = -fitwidth:fitwidth;
 vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2);
 
-% acceleration kernel
-Aa = 1.0/(filterwidth^2 * ...
-    (sqrt(pi)*filterwidth*erf(fitwidth/filterwidth) - ...
-    2*fitwidth*exp(-fitwidth^2/filterwidth^2)));
-akernel = -fitwidth:fitwidth;
-akernel = Aa.*(akernel.^2 - filterwidth^2).*exp(-akernel.^2./filterwidth^2) ./ filterwidth^2;
 
-% loop over tracks
+%{
+ % convolution kernel (second derivative for accelerations)
+Aa = 2.0/(filterwidth^4 * ...
+    (sqrt(pi)*filterwidth*erf(fitwidth/fitwidth) - ...
+    2*fitwidth*exp(-fitwidth^2/filterwidth^2) + ...
+    sqrt(pi)*filterwidth^3*erf(fitwidth/filterwidth)/2));
+
+akernel = -fitwidth:fitwidth;
+akernel = Aa .* (2*akernel.^2/filterwidth^2 - 1) .* exp(-akernel.^2./filterwidth^2); 
+%}
+
+ % loop over tracks
+if minarea==1
+    vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[]),ntracks,1);
+else
+    vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[], ...
+        'V',[],'Theta',[]),ntracks,1);
+end
+for ii = 1:ntracks
+    u = -conv(tracks(ii).X,vkernel,'valid');
+    v = -conv(tracks(ii).Y,vkernel,'valid');
+    if minarea==1
+        vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
+            'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
+            'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
+            'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
+            'U',u, ...
+            'V',v);
+    else
+        vtracks(ii) = struct('len',tracks(ii).len - 2*fitwidth, ...
+            'X',tracks(ii).X(fitwidth+1:end-fitwidth), ...
+            'Y',tracks(ii).Y(fitwidth+1:end-fitwidth), ...
+            'T',tracks(ii).T(fitwidth+1:end-fitwidth), ...
+            'U',u, ...
+            'V',v, ...
+            'Theta',tracks(ii).Theta(fitwidth+1:end-fitwidth));
+    end
+end 
+
+%{
+  % loop over tracks
 if minarea==1
     vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[],'Ax',[],'Ay',[]),ntracks,1);
 else
@@ -308,7 +342,8 @@ for ii = 1:ntracks
         vtracks(ii).Ay = ay;
         vtracks(ii).Theta = tracks(ii).Theta(fitwidth+1:end-fitwidth);
     end
-end
+end  
+%}
 
 % -=- Plot if requested -=------------------------------------------------
 if noisy
