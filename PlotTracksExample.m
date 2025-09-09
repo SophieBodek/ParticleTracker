@@ -1,4 +1,4 @@
-% PlotTracks.m provides example code to visualize the vtracks data
+% PlotTracksExample.m provides example code to visualize the vtracks data
 % structure of the PredictiveTracker.m function using built-in plotting
 % functionalities of the Velocities.m, Vorticities.m, and Divergences.m 
 % functions. 
@@ -41,7 +41,7 @@ disp('Velocities : plots particle velocity vectors');
 disp('Accelerations : plots particle accelerations');
 [atracks,ax,ay,~,~,~,~]=Accelerations(vtracks,framerange,noisy,1);
 % Note: x,y,t,tr vectors outputted by Accelerations will be shorter than
-% those outputted by Velocities due to convolution and smoothing calculations
+% those outputted by Velocities due to convolution and smoothing calculation
 
 disp('Vorticities : plots particle vorticities')
 [vort,~,~,~,~]=Vorticities(vtracks,framerange,noisy); 

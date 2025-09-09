@@ -461,22 +461,35 @@ classdef TiffTrackViewer < handle
                 U = [nan diff(X)./dt]; % X velocity - pad with NaN at start
                 V = [nan diff(Y)./dt]; % Y velocity - pad with NaN at start
                 fprintf('Note: Velocities calculated from positions (U and V fields not found)\n');
-            end
-        
+            end        
             vel = sqrt(U.^2 + V.^2); % speed
-        
-            % Calculate statistics
-            mean_speed = nanmean(vel);
-            max_speed = nanmax(vel);
-            total_distance = nansum(displacement);
-            net_displacement = sqrt((X(end)-X(1))^2 + (Y(end)-Y(1))^2);
+
+            % Extract or calculate accelerations
+            if isfield(track_info, 'Ax') && isfield(track_info, 'Ay')
+                Ax = track_info.Ax;
+                Ay = track_info.Ay;
+            else
+                % Calculate accelerations if not available (backward difference)
+                dt = 1; %timestep = 1 frame
+                Ax = [nan diff(U)./dt]; % X velocity - pad with NaN at start
+                Ay = [nan diff(V)./dt]; % Y velocity - pad with NaN at start
+                fprintf('Note: Accelerations calculated from velocities (Ax and Ay fields not found)\n');
+            end        
+            acc_magnitude = sqrt(Ax.^2 + Ay.^2); % magnitude of acceleration
         
             % Print statistics
             fprintf('Track %d Statistics:\n', track_id);
-            fprintf('Mean speed: %.2f px/frame\n', mean_speed);
-            fprintf('Max speed: %.2f px/frame\n', max_speed);
-            fprintf('Total distance: %.2f px\n', total_distance);
-            fprintf('Net displacement: %.2f px\n', net_displacement);
+            fprintf('Total distance: %.2f px\n', nansum(displacement));
+            fprintf('Net displacement: %.2f px\n', sqrt((X(end)-X(1))^2 + (Y(end)-Y(1))^2));
+            fprintf('Mean velocity, X: %.2f px/frame\n', nanmean(U))
+            fprintf('Mean velocity, Y: %.2f px/frame\n', nanmean(V))
+            fprintf('Mean speed: %.2f px/frame\n', nanmean(vel));
+            fprintf('Max speed: %.2f px/frame\n', nanmax(vel));
+            fprintf('Mean acceleration, X: %.2f px/frame²\n', nanmean(Ax));
+            fprintf('Mean acceleration, Y: %.2f px/frame²\n', nanmean(Ay));
+            fprintf('Mean acceleration (magnitude): %.2f px/frame²\n', nanmean(acc_magnitude));
+            fprintf('Max acceleration (magnitude): %.2f px/frame²\n', nanmax(acc_magnitude));
+            fprintf('----------------------------------------------------------------- \n')
         
             % Create the detailed plot
             figure('Name', sprintf('Track %s %d Details', id_type, track_id), ...
@@ -498,13 +511,19 @@ classdef TiffTrackViewer < handle
             title(sprintf('Track %s %d: X Position & Displacement', id_type, track_id), 'FontSize', 12);
             grid on; grid minor;
         
-            % Velocity, X direction
+            % Velocity and acceleration, X direction
             nexttile
             plot(T, U, 'Color', '#e60000', 'LineWidth', 1.5, 'DisplayName', 'Velocity, U');
             ylabel('Velocity [px/frame]', 'FontSize', 12);
             set(gca, 'YColor', '#e60000');
-            title('X Velocity', 'FontSize', 12);
             yline(nanmean(U), '--k', sprintf('Mean [px/frame]: %.2f', nanmean(U)));
+            yyaxis right
+            plot(T, Ax, 'Color', '#ff8000', 'LineWidth', 1.5, 'DisplayName', 'Acceleration, Ax');
+            ylabel('X Acceleration [px/frame²]', 'FontSize', 12);
+            set(gca, 'YColor', '#ff8000');
+            %yline(nanmean(Ax), '--', 'Color', '#ff8000', 'LineWidth', 1, ...
+            %    'DisplayName', sprintf('Mean Ax: %.2f', nanmean(Ax)));
+            title('X Velocity & Acceleration', 'FontSize', 12);
             grid on; grid minor;
         
             % Y position and displacement
@@ -526,8 +545,14 @@ classdef TiffTrackViewer < handle
             plot(T, V, 'Color', '#e60000', 'LineWidth', 1.5, 'DisplayName', 'Velocity, V');
             ylabel('Velocity [px/frame]', 'FontSize', 12);
             set(gca, 'YColor', '#e60000');
-            title('Y Velocity', 'FontSize', 12);
             yline(nanmean(V), '--k', sprintf('Mean [px/frame]: %.2f', nanmean(V)));
+            yyaxis right
+            plot(T, Ay, 'Color', '#ff8000', 'LineWidth', 1.5, 'DisplayName', 'Acceleration, Ay');
+            ylabel('Y Acceleration [px/frame²]', 'FontSize', 12);
+            set(gca, 'YColor', '#ff8000');
+            %yline(nanmean(Ay), '--', 'Color', '#ff8000', 'LineWidth', 1, ...
+            %    'DisplayName', sprintf('Mean Ay: %.2f', nanmean(Ay)));
+            title('Y Velocity & Acceleration', 'FontSize', 12);
             grid on; grid minor;
         
             % Net displacement and speed
@@ -541,8 +566,13 @@ classdef TiffTrackViewer < handle
             plot(T, vel, 'Color', 'r', 'LineWidth', 1.5, 'DisplayName', 'Speed [px]');
             ylabel('Speed [px/frame]', 'FontSize', 12);
             set(gca, 'YColor', 'r');
-            yline(mean_speed, '--r', sprintf('Mean [px/frame]: %.2f', mean_speed));
-            title('Net Displacement & Speed', 'FontSize', 12);
+            %yline(nanmean(vel), '--r', sprintf('Mean [px/frame]: %.2f', nanmean(vel)));
+            hold on % plot acceleration
+            plot(T, acc_magnitude, 'Color', '#ff8000', 'LineWidth', 1.5, 'DisplayName', 'Acceleration Magnitude [px/frame²]');
+            ylabel('Speed [px/frame]; Acceleration [px/frame²]', 'FontSize', 12);
+            title('Net Displacement, Speed & Acceleration Magnitude', 'FontSize', 12);
+            legend('show', 'Location', 'best');
+            %title('Net Displacement & Speed', 'FontSize', 12);
             grid on; grid minor;
         
             xlabel('Time [frame no.]', 'FontSize', 12);
