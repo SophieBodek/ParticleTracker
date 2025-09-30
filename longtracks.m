@@ -2,17 +2,30 @@ function [nlong,ntracks,lmean,lrms,lmax]=longtracks(filename,minlength,noisy,rea
 % Usage: [nlong,ntracks,lmean,lrms,lmax]=longtracks(filename,[minlength],[noisy],[readwhole])
 % Working from the tracks in filename, longtracks plots all tracks
 % longer than minlength. It also returns simple statistics about track
-% lengths. If noisy=0, no plot is produced. If readwhole==0, a slower, 
-% less memory-intensive plotting algorithm is used (will eliminate some
-% out-of-memory errors). The input file must be sorted trackwise and have 
-% trackindex, x, and y as its first three columns (plus z as its next 
-% column if the tracks are 3D). Requires read_gdf.m.
+% lengths. 
+%
+% INPUT:
+% filename - input file must be sorted trackwise and have trackindex, x,
+%            and y as its first three columns (plus z as its next column if
+%            tracks are 3D). Also accepts vtracks struct (outputted by
+%            PredictiveTracker function)
+% minlength - minimum track length to plot (default: 20)
+% noisy - if noisy=0, no plot is produced; if noisy=1, tracks are plotted in 
+%         their actual locations. If noisy=2, all tracks are shifted to start 
+%         at the origin (default: noisy = 1)
+% readwhole - if true, uses faster algorithm (default: true); if readwhole==0, 
+%             a slower, less memory-intensive plotting algorithm is used 
+%             (will eliminate some out-of-memory errors). 
+% 
+% Requires read_gdf.m; if vtracks input, requires Velocities.m function.
 
 % Written by Nick Ouellette and Doug Kelley. 
 % Improved input parsing 28 October 2009.
 % 24 February 2010: Now plots are always connected. Also changed "bigfile"
 % to "readwhole". 
-% Works with 2D or 3D tracks as of 18 October 2011. 
+% Works with 2D or 3D tracks as of 18 October 2011.
+% Removed gdf-related code (appears to be deprecated) in 2024
+% Added plotting from vtracks and noisy==2 functionality September 2025
 
 indcol = 1;
 xcol = 2;
@@ -37,10 +50,33 @@ if ~exist('readwhole','var') || isempty(readwhole)
     readwhole=readwholedefault;
 end
 
-is3D=false;
-if readwhole % For smaller .gdf files, read & plot all at once.
+% Handle different input types
+if isstruct(filename)
+   % Check if it's a valid vtracks struct
+    required_fields = {'len', 'X', 'Y', 'U', 'V', 'T'};
+    struct_fields = fieldnames(filename);
+    
+    if ~all(ismember(required_fields, struct_fields))
+        missing_fields = required_fields(~ismember(required_fields, struct_fields));
+        error('Invalid vtracks struct. Missing required fields: %s', strjoin(missing_fields, ', '));
+    end
+    
+    % Process through velocities function to get track index, X and Y position
+    try
+        [~,~,x,y,~,tr] = Velocities(filename,[1 inf],0);
+    catch ME
+        error('Error processing vtracks through velocities function: %s', ME.message);
+    end
+    alltracks = sortrows([tr x y], 1); %need to sort data trackwise with TR, X, Y
+    alltracks = alltracks';
+else
+    % Original behavior - filename is the data matrix
     alltracks = filename; %load(filename);%transpose(read_gdf(filename));
     alltracks = alltracks';
+end
+
+is3D=false;
+if readwhole % For smaller .gdf files, read & plot all at once.
     if size(alltracks,1)==6 %should this be 4 (tr, x, y, and z)?
 %         disp('Found 6 columns; assuming tracks are 3D.')
         is3D=true;
@@ -59,11 +95,26 @@ if readwhole % For smaller .gdf files, read & plot all at once.
         hold(h, 'on');
         for ii=1:numel(begins)
             ind=begins(ii):ends(ii);
-            if is3D
-                plot3(alltracks(xcol,ind),alltracks(ycol,ind), ...
-                    alltracks(zcol,ind))
+            
+            if noisy == 2
+                % Shift tracks to start at origin
+                x_shifted = alltracks(xcol,ind) - alltracks(xcol,ind(1));
+                y_shifted = alltracks(ycol,ind) - alltracks(ycol,ind(1));
+                
+                if is3D
+                    z_shifted = alltracks(zcol,ind) - alltracks(zcol,ind(1));
+                    plot3(x_shifted, y_shifted, z_shifted)
+                else
+                    plot(x_shifted, y_shifted)
+                end
             else
-                plot(alltracks(xcol,ind),alltracks(ycol,ind))
+                % Plot tracks in original positions (noisy == 1)
+                if is3D
+                    plot3(alltracks(xcol,ind),alltracks(ycol,ind), ...
+                        alltracks(zcol,ind))
+                else
+                    plot(alltracks(xcol,ind),alltracks(ycol,ind))
+                end
             end
         end
     end
@@ -124,7 +175,11 @@ lmax=max(lengths); %maximum track length
 if noisy 
     axis tight
     set(gca,'dataaspectratio',[1 1 1])
-    fig_title = "Tracks longer than "+int2str(minlength)+" frames";
+    if noisy == 2
+        fig_title = "Tracks longer than "+int2str(minlength)+" frames (shifted to origin)";
+    else %noisy = 1
+        fig_title = "Tracks longer than "+int2str(minlength)+" frames";
+    end
     title(fig_title,'interpreter','none')
     if is3D
         view(3)

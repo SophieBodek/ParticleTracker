@@ -179,7 +179,7 @@ if noisy
         if isinf(framerange(2))
             framerange(2)=t(end);
         end
-        title(['vorticity at ' num2str(numel(x)) ' particles in frames ' ...
+        title(['accelerations at ' num2str(numel(x)) ' particles in frames ' ...
             num2str(min(framerange)) ' to ' num2str(max(framerange)) ]);
     end
 end

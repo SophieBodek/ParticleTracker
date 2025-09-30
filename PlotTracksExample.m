@@ -3,7 +3,7 @@
 % functionalities of the Velocities.m, Vorticities.m, and Divergences.m 
 % functions. 
 % 
-% In order to run, this does require the following:
+% In order to run, this code requires the following functions:
 %   -   Velocities.m : outputs [X, Y, T, U, V, Tr] from vtracks
 %                      also plots particle velocity vectors
 %   -   Accelerations.m : outputs [Atracks, Ax, Ay, X, Y, T, Tr] from vtracks
@@ -14,7 +14,8 @@
 %   -   Divergences.m : outputs [Div, X, Y, T, Tr] from vtracks
 %                       also plots particle divergences
 %                        (requires Partial Differential Equation toolbox)
-%   -   longtracks.m : plots tracks over a given length
+%   -   longtracks.m : plots tracks over a given length (i.e., number of frames)
+%                      with two plot types 
 %   -   bigread4.m : quickly loads large .TIFF stacks
 %   -   TiffTrackViewer.m : viewer for playing images as a movie with tracks overlaid
 %   -   PredTrackerMovie.m : plays active tracks over images as a movie --> TO ADD MAYBE
@@ -50,11 +51,16 @@ disp('Divergences : plots particle divergences')
 [div,~,~,~,~]=Divergences(vtracks,framerange,noisy); 
 
 % Use longtracks to view tracks over minlength -------------------------------------------
-tracks = sortrows([tr x y], 1); %need to sort data trackwise with TR, X, Y
+%tracks = sortrows([tr x y], 1); %need to sort data trackwise with TR, X, Y
 minlength = 20; %minimum track length to plot
 
 fprintf('longtracks : Plots all tracks longer than %d frames.\n', minlength);
-[nlong,ntracks,lmean,lrms,lmax]=longtracks(tracks,minlength,noisy);
+disp('note - noisy=1 specifies plotting long tracks in their original positions.')
+[nlong,ntracks,lmean,lrms,lmax]=longtracks(vtracks,minlength,noisy);
+
+fprintf('longtracks : Plots all tracks longer than %d frames.\n', minlength);
+disp('note - noisy=2 specifies plotting overlaid long tracks shifted to the origin.')
+[nlong,ntracks,lmean,lrms,lmax]=longtracks(vtracks,minlength,2);
 
 % Tiff player with functionality for viewing overlaid tracks -----------------------------
 % Add field for track index (helps with referencing track number in original vtracks struct)
