@@ -6,14 +6,15 @@
 % In order to run, this code requires the following functions:
 %   -   Velocities.m : outputs [X, Y, T, U, V, Tr] from vtracks
 %                      also plots particle velocity vectors
-%   -   Accelerations.m : outputs [Atracks, Ax, Ay, X, Y, T, Tr] from vtracks
-%                         also plots particle accelerations
+%   -   Accelerations.m : outputs [Atracks, Ax, Ay, X, Y, T, Tr, (curvature)] 
+%                         from vtracks; also plots particle accelerations and
+%                          curvatures (if requested)
 %   -   Vorticities.m : outputs [Vort, X, Y, T, Tr] from vtracks
 %                       also plots particle vorticities
 %                       (requires Partial Differential Equation toolbox)
 %   -   Divergences.m : outputs [Div, X, Y, T, Tr] from vtracks
 %                       also plots particle divergences
-%                        (requires Partial Differential Equation toolbox)
+%                       (requires Partial Differential Equation toolbox)
 %   -   longtracks.m : plots tracks over a given length (i.e., number of frames)
 %                      with two plot types 
 %   -   bigread4.m : quickly loads large .TIFF stacks
@@ -40,14 +41,17 @@ disp('Velocities : plots particle velocity vectors');
 [u,v,x,y,t,tr]=Velocities(vtracks,framerange,noisy);
 
 disp('Accelerations : plots particle accelerations');
-[atracks,ax,ay,~,~,~,~]=Accelerations(vtracks,framerange,noisy,1);
+[atracks,ax,ay,~,~,~,~]=Accelerations(vtracks,framerange,1,0,noisy);
 % Note: x,y,t,tr vectors outputted by Accelerations will be shorter than
 % those outputted by Velocities due to convolution and smoothing calculation
 
-disp('Vorticities : plots particle vorticities')
+disp('Accelerations : also plots curvature when requested');
+[atracks,~,~,~,~,~,curv]=Accelerations(vtracks,framerange,2,1,noisy);
+
+disp('Vorticities : plots particle vorticities');
 [vort,~,~,~,~]=Vorticities(vtracks,framerange,noisy); 
 
-disp('Divergences : plots particle divergences')
+disp('Divergences : plots particle divergences');
 [div,~,~,~,~]=Divergences(vtracks,framerange,noisy); 
 
 % Use longtracks to view tracks over minlength -------------------------------------------
@@ -55,11 +59,11 @@ disp('Divergences : plots particle divergences')
 minlength = 20; %minimum track length to plot
 
 fprintf('longtracks : Plots all tracks longer than %d frames.\n', minlength);
-disp('note - noisy=1 specifies plotting long tracks in their original positions.')
+disp('note --> noisy=1 specifies plotting long tracks in their original positions.');
 [nlong,ntracks,lmean,lrms,lmax]=longtracks(vtracks,minlength,noisy);
 
 fprintf('longtracks : Plots all tracks longer than %d frames.\n', minlength);
-disp('note - noisy=2 specifies plotting overlaid long tracks shifted to the origin.')
+disp('note --> noisy=2 specifies plotting overlaid long tracks shifted to the origin.');
 [nlong,ntracks,lmean,lrms,lmax]=longtracks(vtracks,minlength,2);
 
 % Tiff player with functionality for viewing overlaid tracks -----------------------------
