@@ -1,4 +1,4 @@
-function [atracks,ax,ay,x,y,t,tr]=Accelerations(vtracks,framerange,order,curvature,noisy)
+function [atracks,ax,ay,u,v,x,y,t,tr,curv]=Accelerations(vtracks,framerange,order,curvature,noisy)
 % Usage: [atracks,ax,ay,x,y,t,tr,[curv]]=Accelerations(vtracks,[framerange],[order],[curvature],[noisy])
 % Working from the velocity tracks in "vtracks", Accelerations plots the
 % acceleration of each particle in frames "framerange". Acceleration values are 
@@ -6,7 +6,7 @@ function [atracks,ax,ay,x,y,t,tr]=Accelerations(vtracks,framerange,order,curvatu
 % track indices are returned in "x", "y", and "t". Specify "framerange" as a 
 % two-element vector: [starttime endtime]. Specify method for computing 
 % accelerations using "order"; order==1 takes first derivative of velocities 
-% in vtracks (default), while order==2 takes second derivative of positions 
+% in vtracks, while order==2 takes second derivative of positions (default) 
 % in vtracks. If curvature ==1, function also calculates and outputs curvature 
 % in "curv" vector (no output if curvature==0). If noisy==0, no plot is produced. 
 %
@@ -20,7 +20,7 @@ function [atracks,ax,ay,x,y,t,tr]=Accelerations(vtracks,framerange,order,curvatu
 
 framerangedefault = [-inf inf]; % all frames
 noisydefault=1; 
-orderdefault=1; 
+orderdefault=2; 
 curvaturedefault = 0; 
 
 if nargin<1
@@ -66,12 +66,10 @@ Av = 1.0/(0.5*filterwidth^2 * ...
 vkernel = -fitwidth:fitwidth;
 vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2); 
 
-% Normalization factor for second derivative
-Aa = 2.0/(filterwidth^4 * ...
-    (sqrt(pi)*filterwidth*erf(fitwidth/fitwidth) - ...
-    2*fitwidth*exp(-fitwidth^2/filterwidth^2) + ...
-    sqrt(pi)*filterwidth^3*erf(fitwidth/filterwidth)/2));
-
+% convolution kernel - second derivative acceleration
+Aa = 1.0/(0.5 * ...
+    (sqrt(pi)*filterwidth^3*erf(fitwidth/filterwidth) - ...
+    2*fitwidth*exp(-fitwidth^2/filterwidth^2)*(filterwidth^2 + fitwidth^2)));
 akernel = -fitwidth:fitwidth;
 akernel = Aa .* (2*akernel.^2/filterwidth^2 - 1) .* exp(-akernel.^2./filterwidth^2);
 
@@ -180,6 +178,8 @@ for ii=1:numel(atracks) % assemble arrays from atracks structure
         Np=sum(ind);
         ax(pos:pos+Np-1)=atracks(ii).Ax(ind(:));
         ay(pos:pos+Np-1)=atracks(ii).Ay(ind(:));
+        u(pos:pos+Np-1)=atracks(ii).U(ind(:));
+        v(pos:pos+Np-1)=atracks(ii).V(ind(:));
         x(pos:pos+Np-1)=atracks(ii).X(ind(:));
         y(pos:pos+Np-1)=atracks(ii).Y(ind(:));
         t(pos:pos+Np-1)=atracks(ii).T(ind(:));
@@ -194,6 +194,8 @@ end
 ind=~isnan(ax); % remove unwanted frames
 ax=ax(ind);
 ay=ay(ind);
+u=u(ind);
+v=v(ind);
 x=x(ind);
 y=y(ind);
 t=t(ind);
@@ -205,6 +207,8 @@ end
 [t,ind]=sort(t(:)); % sort by time
 ax=ax(ind);
 ay=ay(ind);
+u=u(ind);
+v=v(ind);
 x=x(ind);
 y=y(ind);
 tr=tr(ind);

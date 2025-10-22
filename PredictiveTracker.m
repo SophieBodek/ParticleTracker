@@ -268,12 +268,10 @@ vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2);
 
 
 %{
- % convolution kernel (second derivative for accelerations)
-Aa = 2.0/(filterwidth^4 * ...
-    (sqrt(pi)*filterwidth*erf(fitwidth/fitwidth) - ...
-    2*fitwidth*exp(-fitwidth^2/filterwidth^2) + ...
-    sqrt(pi)*filterwidth^3*erf(fitwidth/filterwidth)/2));
-
+% convolution kernel - second derivative acceleration
+Aa = 1.0/(0.5 * ...
+    (sqrt(pi)*filterwidth^3*erf(fitwidth/filterwidth) - ...
+    2*fitwidth*exp(-fitwidth^2/filterwidth^2)*(filterwidth^2 + fitwidth^2)));
 akernel = -fitwidth:fitwidth;
 akernel = Aa .* (2*akernel.^2/filterwidth^2 - 1) .* exp(-akernel.^2./filterwidth^2); 
 %}

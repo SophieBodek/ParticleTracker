@@ -64,7 +64,7 @@ end
 if isfield(vtracks, 'vtracks') 
     vtracks = vtracks.vtracks; %track data may be in a vtracks field
     %fprintf('Input format: struct with vtracks field\n');
-elseif isfield(vtracks, 'len') && isfield(track_data, 'X')
+elseif isfield(vtracks, 'len') && isfield(vtracks, 'X')
     vtracks = vtracks; %otherwise vtracks should have the fields we are looking for
     %fprintf('Input format: direct vtracks struct\n');
 end
