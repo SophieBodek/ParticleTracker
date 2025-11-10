@@ -1,7 +1,7 @@
 # ParticleTracker
 Multi-frame predictive particle-tracking algorithm for 2-D systems implemented using MATLAB. This code was written by Nicholas T. Ouellette (Stanford) and Douglas H. Kelley (University of Rochester) and is available in its original form here: https://web.stanford.edu/~nto/software_tracking.shtml
 
-This particle-tracking algorithm was developed for Lagrangian particle tracking for flow visualization, but is broadly applicable to a variety of systems and has been used to follow the motion of animals, insects, and sediments. Particle trajectories are also processed by convolution with a smoothing and differentiating kernel to calculate velocities and accelerations (Mordant at al., 2004; Ouellette, 2006).
+This particle-tracking algorithm was developed for Lagrangian particle tracking for flow visualization, but is broadly applicable to a variety of systems and has been used to follow the motion of animals, insects, and sediments. Particle trajectories are also processed by convolution with a smoothing and differentiating kernel to calculate velocities and accelerations (Mordant et al., 2004; Ouellette, 2006).
 
 Since particle tracking experiments often produce a large quantity of images, this repository also includes scripts for quickly reading and viewing large uncompressed TIFF stacks or sequences of TIFF files. This TIFF reading and viewing code is adapted from Joseph M. Stujenske's *Matlab_FastTiffReadWrite* repository: https://github.com/jmstujenske/Matlab_FastTiffReadWrite
 
