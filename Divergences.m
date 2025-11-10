@@ -14,6 +14,8 @@ function [div,x,y,t,tr]=Divergences(vtracks,framerange,noisy)
 % Included tr output and pre-allocated for speed (making a real difference) 
 % 16 April 2012. 
 
+% Note: requires Partial Differential Equation toolbox
+
 framerangedefault = [-inf inf]; % all frames
 noisydefault=1;
 satgoal=1; % colormap limits chosen for 1% saturation

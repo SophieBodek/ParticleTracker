@@ -1,35 +1,55 @@
-function [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,threshold,max_disp,bground_name,minarea,invert,noisy)
-% Usage: [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,threshold,max_disp,[bground_name],[minarea],[invert],[noisy])
-% Given a movie of particle motions, PredictiveTracker produces Lagrangian
-% particle tracks using a predictive three-frame best-estimate algorithm.
-% The movie must be saved as a series of image files, an image stack in
-% .tif or .gif format, or an uncompressed .avi file; specify the movie in
-% "inputnames" (e.g., '0*.png' or 'stack.tif', or 'movie.avi'). To be
-% identified as a particle, a part of the image must have brightness that
-% differs from the background by at least "threshold". If invert==0,
-% PredictiveTracker seeks particles brighter than the background; if
-% invert==1, PredictiveTracker seeks particles darker than the background;
-% and if invert==-1, PredictiveTracker seeks any sort of contrast. The
-% background is read from the file "bground_name"; see BackgroundImage. If
-% minarea==1, PredictiveTracker seeks single-pixel particles by comparing
-% brightness to adjacent pixels (fast and good for small particles);
-% otherwise PredictiveTracker seeks particles having areas larger than
-% "minarea" (in square pixels; this method is better for tracking large
-% particles). Once identified, each particle is tracked using a kinematic
+function [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,max_disp,threshold,bground_name,minarea,invert,noisy,difftracks)
+% Usage: [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,max_disp,[threshold],[bground_name],[minarea],[invert],[noisy],[difftracks])
+% 
+% Given a movie or images of particle motions (or array of particle coordinates
+% obtained using a separate particle detection algorithm), PredictiveTracker 
+% produces particle trajectories using a predictive three-frame best-estimate 
+% algorithm (Ouelette et al, 2006). For particle coordinate input, array must be
+% of the form [x y t (angle)].
+%
+% If using ParticleFinder.m, the movie must be saved as a series of image files, 
+% an image stack in .tif or .gif format, or an uncompressed .avi file; specify 
+% the movie in "inputnames" (e.g., '0*.png' or 'stack.tif', or 'movie.avi'). 
+% To be identified as a particle, a part of the image must have brightness that 
+% differs from the background by at least "threshold" (required if ParticleFinder
+% is used). If invert==0, PredictiveTracker seeks particles brighter than the 
+% background; if invert==1, PredictiveTracker seeks particles darker than the 
+% background; and if invert==-1, PredictiveTracker seeks any sort of contrast. 
+% The background is read from the file "bground_name"; see BackgroundImage function. 
+% If minarea==1, PredictiveTracker seeks single-pixel particles by comparing 
+% brightness to adjacent pixels (fast and good for small particles); otherwise 
+% PredictiveTracker seeks particles having areas larger than "minarea" (in square 
+% pixels; this method is better for tracking large particles). See ParticleFinder.m 
+% for additional details.
+% 
+% Once identified, each particle is tracked using a kinematic
 % prediction, and a track is broken when no particle lies within "max_disp"
 % pixels of the predicted location. The results are returned in the
-% structure "vtracks", whose fields "len", "X", "Y", "T", "U", and "V"
-% contain the length, horizontal coordinates, vertical coordinates, times,
-% horizontal velocities, and vertical velocities of each track,
-% respectively. If minarea~=1, "vtracks" is returned with an additonal
+% structure "vtracks", whose fields "len", "X", "Y", and "T" contain the
+% length, horizontal coordinates, vertical coordinates, and times of each
+% track, respectively. If minarea~=1, "vtracks" is returned with an additonal 
 % field, "Theta", giving the orientation of the major axis of the particle
-% with respect to the x-axis, in radians. The total number of tracks is
+% with respect to the x-axis, in radians (or maintains angle measurement if
+% provided in input particle coordinate array). The total number of tracks is
 % returned as "ntracks"; the mean and root-mean-square track lengths are
-% returned in "meanlength" and "rmslength", respectively. If noisy~=0, the
-% movie is repeated with overlaid velocity quivers and the tracks are
-% plotted. If noisy==2, each movie frame is also saved to disk as an image.
-% Requires ParticleFinder.m; also requires read_uncompressed_avi.m for use
-% with .avi movies. This file can be downloaded from
+% returned in "meanlength" and "rmslength", respectively.
+%
+% If difftracks==1, PredictiveTracker uses a smoothing and differentiating kernel to
+% calculate particle velocities and particle accelerations. This outputs the structure 
+% "vtracks" with added fields: "U" and "V" for horizontal and vertical velocities, and
+% "Ax" and "Ay" for horizontal and vertical accelerations; use difftracks==0 if no 
+% smoothing or differentiation requested, then raw tracks are returned in vtracks. 
+% See DifferentiateTracks.m for details.
+% 
+% If noisy~=0, the movie is repeated with overlaid velocity quivers and the 
+% tracks are plotted. If noisy==2, each movie frame is also saved to disk as 
+% an image (saved to "TracksMovie" folder within same directory as image files). 
+% 
+% If finding particles directly from images/movie, requires ParticleFinder.m; 
+% also requires read_uncompressed_avi.m for use with .avi movies. If calculating
+% particle velocities or accelerations, requires DifferentiateTracks.m.
+% 
+% This file can be downloaded from
 % https://web.stanford.edu/~nto/software_tracking.shtml.
 
 % Written by Nicholas T. Ouellette September 2010. 
@@ -54,22 +74,29 @@ function [vtracks,ntracks,meanlength,rmslength] = PredictiveTracker(inputnames,t
 % Fixed bugs associated with frames in which no particles are found,
 % 6 March 2012.
 % Offloaded particle finding to ParticleFinder.m, 7 March 2012.
+% SB offloaded track differentiation to DifferentiateTracks.m, Oct 2025.
 
 % -=- Set defaults -=-----------------------------------------------------
+% -=- Arguments for ParticleFinder.m -=-
 bground_name_default = 'background.tif';
-noisy_default=0; % don't plot unless requested
 minarea_default=1; % by default seek small particles quickly
 invert_default=-1; % by default, use absolute contrast
+
+% -=- Arguments for DifferentiateTracks.m -=-
+difftracks_default = 1; 
+filterwidth = 2; fitwidth = 3; % parameters for the differentiation kernel
+ 
+% -=- Plotting defaults -=-
+noisy_default=0; % don't plot unless requested
 pausetime=1/33; % seconds to pause between frames when plotting
-savedirname='tracksmovie';
+savedirname='TracksMovie';
 figsize=[800 600]; % figure width and height, in pixels
 framerange=[1 inf]; % Could allow framerange as an input... 
-filterwidth = 1; fitwidth = 3; % parameters for the differentiation kernel
 
 % -=- Parse inputs -=-----------------------------------------------------
 if nargin<1
     error(['Usage: [vtracks,ntracks,meanlength,rmslength] = ' mfilename ...
-        '(inputnames,threshold,max_disp,[bground_name],[minarea],[invert],[noisy])'])
+        '(inputnames,threshold,max_disp,[bground_name],[minarea],[invert],[difftracks],[noisy])'])
 end
 if ~exist('bground_name','var') || isempty(bground_name)
     bground_name=bground_name_default;
@@ -80,14 +107,52 @@ end
 if ~exist('invert','var') || isempty(invert)
     invert=invert_default;
 end
+if ~exist('difftracks','var') || isempty(difftracks)
+    difftracks=difftracks_default;
+end
 if ~exist('noisy','var') || isempty(noisy)
     noisy=noisy_default;
 end
 
-% -=- Find particles in all frames -=-------------------------------------
-[x,y,t,ang]=ParticleFinder(inputnames,threshold,framerange,[], ...
-    bground_name,minarea,invert,0);
-    
+% -=- Find particle coordinates -=----------------------------------------
+if ischar(inputnames) || isstring(inputnames)
+    [filepath,junk,ext]=fileparts(inputnames); 
+else
+    ext = [];
+end
+
+xcol = 1; 
+ycol = 2;
+tcol = 3;
+angcol = 4;
+
+if strcmpi(ext,'.avi') || strcmpi(ext,'.tif') || strcmpi(ext,'.tiff') || strcmpi(ext,'.png')
+    iscoords = false;
+    disp('Images or movie input; finding particles using ParticleFinder.m');
+    if ~exist('threshold','var') || isempty(threshold)
+        warning('No threshold specified; please specify a particle detection threshold to use ParticleFinder.');
+    end
+    [x,y,t,ang]=ParticleFinder(inputnames,threshold,framerange,[], ...
+        bground_name,minarea,invert,0);
+else
+    iscoords = true; % flag for coordinate only input
+    disp('Particle coordinate input –-> tracking...');
+    if strcmpi(ext, '.mat')
+            coords = load(inputnames);
+    else
+        coords = inputnames;
+    end
+    [numrows, numcols] = size(coords);
+    x = coords(:,xcol);
+    y = coords(:,ycol);
+    t = coords(:,tcol);
+    if numcols == 4
+        ang = coords(:,angcol);
+        minarea = 2; % indicates angle/Theta data is present
+    end
+end    
+
+% -=- Link found particles into trajectories -=---------------------------
 T=min(t):max(t);
 [tt,endsind]=unique(t,'last');
 [tt,beginsind]=unique(t,'first');
@@ -99,9 +164,6 @@ ends(isnan(ends))=-1; %frames with no particles
 begins(isnan(begins))=1; %frames with no particles
 tt=T;
 Nf=numel(tt);
-if Nf < (2*fitwidth+1)
-    error(['Sorry, found too few files named ' inputnames '.'])
-end
 
 % -=- Set up struct array for tracks -=-----------------------------------
 ind=begins(1):ends(1);
@@ -249,16 +311,20 @@ for t = 2:Nf
 
 end
 
-% -=- Prune tracks that are too short -=----------------------------------
-disp('Pruning...');
-tracks = tracks([tracks.len] >= (2*fitwidth+1));
-ntracks = numel(tracks);
-meanlength = mean([tracks.len]);
-rmslength = sqrt(mean([tracks.len].^2));
-
 % -=- Compute velocities -=-----------------------------------------------
-disp('Differentiating...');
+if difftracks==0
+    disp('No smoothing or differentation requested; returning raw tracks only.')
+    vtracks = tracks; %returns tracks data struct (no velocities or accelerations)
+else
+    if Nf < (2*fitwidth+1)
+        warning(['Sorry, too few frames for smoothing/differentiation; need at least ' ...
+                 int2str(2*fitwidth+1) ' frames.'])
+    end
+    disp('Differentiating...');
+    vtracks = DifferentiateTracks(tracks,filterwidth,fitwidth,0);
+end
 
+%{
 % define the convolution kernel
 Av = 1.0/(0.5*filterwidth^2 * ...
     (sqrt(pi)*filterwidth*erf(fitwidth/filterwidth) - ...
@@ -266,7 +332,7 @@ Av = 1.0/(0.5*filterwidth^2 * ...
 vkernel = -fitwidth:fitwidth;
 vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2);
 
-% loop over tracks
+ % loop over tracks
 if minarea==1
     vtracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[]),ntracks,1);
 else
@@ -292,15 +358,27 @@ for ii = 1:ntracks
             'V',v, ...
             'Theta',tracks(ii).Theta(fitwidth+1:end-fitwidth));
     end
-end
+end 
+%}
+
+% -=- Prepare output -=-----------------------------------------------
+% returns track statistics of pruned/differentiated tracks if difftracks requested
+% otherwise returns raw track statistics
+ntracks = numel(vtracks);
+meanlength = mean([vtracks.len]);
+rmslength = sqrt(mean([vtracks.len].^2));
 
 % -=- Plot if requested -=------------------------------------------------
 if noisy
+    if iscoords %if only coordinates are provided, cannot plot
+        error('Particle coordinate input; tracking video will not work :(');
+    end
     if isnumeric(noisy) && noisy>1
         disp(['Plotting and saving frames. ' ...
             'Plese do not cover the figure window!'])
-        if exist(savedirname,'file')~=7
-            mkdir(savedirname)
+        savepath = fullfile(filepath,savedirname);
+        if exist(savepath,'file')~=7
+            mkdir(savepath);
         end
     else
         disp('Plotting...')
@@ -361,25 +439,28 @@ if noisy
             set(hi,'cdata',im.cdata);
             set(gcf,'name',[num2str(np) ' particles in ' names.name ...
                 ' (' num2str(ii) ' of ' num2str(Nf) ')']); 
+            %frameFilename = sprintf('frame_%04d%s', ii, ext);
         elseif numel(names)==1 && ( strcmpi(ext,'.tif') || ...
                 strcmpi(ext,'.tiff') || strcmpi(ext,'.gif') ) % single file, looks like an image stack
             set(hi,'cdata',imread(fullfile(filepath,names.name),ii)); 
             set(gcf,'name',[num2str(np) ' particles in ' names.name ...
                 ' (' num2str(ii) ' of ' num2str(Nf) ')']); 
+            frameFilename = sprintf('frame_%04d%s', ii, ext);
         else
             set(hi,'cdata',imread(fullfile(filepath,names(ii).name))); 
             set(gcf,'name',[num2str(np) ' particles in ' names(ii).name ...
-                ' (' num2str(ii) ' of ' num2str(Nf) ')']); 
+                ' (' num2str(ii) ' of ' num2str(Nf) ')']);
+            frameFilename = names(ii).name;
         end % if strcmpi(ext,'.avi')
         drawnow
         pause(pausetime); 
         if isnumeric(noisy) && noisy>1
             snap=getframe(gca);
             imwrite(snap.cdata, ...
-                fullfile(filepath,savedirname,names(ii).name)); 
+                fullfile(filepath,savedirname,frameFilename)); %names(ii).name));  
         end 
     end
 end
-disp('Done.')
+disp('Done!')
 
 end

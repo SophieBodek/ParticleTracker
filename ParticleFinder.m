@@ -22,14 +22,16 @@ function [x,y,t,ang] = ParticleFinder(inputnames,threshold,framerange,outputname
 % begins with a long int giving its particle count, and continues with
 % double-precision floats giving the x and y coordinates of each particle.
 % If noisy~=0, the movie is repeated with particle locations overlaid. If
-% noisy>1, each movie frame is also saved to disk as an image. See also
+% noisy>1, each movie frame is also saved to disk as an image (saved to 
+% "ParticlesMovie" folder within same directory as image files). See also
 % BackgroundImage.m and PredictiveTracker.m. Requires
 % read_uncompressed_avi.m for use with .avi movies. 
 
-% Written 20 October 2011 by Doug Kelley, largely based on 
-% PredictiveTracker.m.
-% Renamed ParticleFinder and incorporated FindParticles function 27 October 
-% 2011. 
+% The original file can be downloaded from
+% https://web.stanford.edu/~nto/software_tracking.shtml.
+
+% Written 20 October 2011 by Doug Kelley, largely based on PredictiveTracker.m.
+% Renamed ParticleFinder and incorporated FindParticles function 27 October 2011. 
 % Fixed plotting bug in bug plotting 15 November 2011. 
 % Added "ang" output (particle orientation) 18 November 2011. 
 % Added "framerange" input 28 November 2011. 
@@ -37,11 +39,9 @@ function [x,y,t,ang] = ParticleFinder(inputnames,threshold,framerange,outputname
 % Included invert==-1 option 22 February 2012.
 % Made compatible with tiff & gif stacks and squelched regionprops 
 % divide-by-zero warning 7 March 2012. 
-% Thanks go to Max Gould for spotting a bug in the main loop; fixed 26
-% March 2012. 
+% Thanks go to Max Gould for spotting a bug in the main loop; fixed 26 March 2012. 
 % Changed 29 March 2012 to plot bars if minarea>1. 
-% Updated 30 March 2012 to use *weighted* orientaion and pre-allocate
-% arrays.
+% Updated 30 March 2012 to use *weighted* orientaion and pre-allocate arrays.
 % Updated 29 May 2012 with "arealim" input instead of "minearea".
 
 % Next: write angle to output file!
@@ -53,7 +53,7 @@ noisy_default=0; % don't plot unless requested
 arealim_default=1; 
 invert_default=-1; % by default, use absolute contrast
 pausetime=1/30; % seconds to pause between frames when plotting
-savedirname='particlesmovie';
+savedirname='ParticlesMovie'; % folder name for output movie
 barsize=8; % if interested in angle, plot particles as rods 5 px long
 
 if nargin<2
@@ -107,7 +107,7 @@ elseif numel(names)==1 && ( strcmpi(ext,'.tif') || ...
     ht=movinfo(1).Height;
     wd=movinfo(1).Width;
     tmin=max([framerange(1) 1]);
-    tmax=min([framerange(2) movinfo.NumFrames]);
+    tmax=min([framerange(2) size(movinfo,1)]);
 else
     movtype='images';
     movinfo=imfinfo(fullfile(filepath,names(1).name));
@@ -263,8 +263,9 @@ if noisy
     if isnumeric(noisy) && noisy>1
         disp(['Plotting and saving frames. ' ...
             'Please do not cover the figure window!'])
-        if exist(savedirname,'file')~=7
-            mkdir(savedirname)
+        savepath = fullfile(filepath,savedirname);
+        if exist(savepath,'file')~=7
+            mkdir(savepath);
         end
     else
         disp('Plotting...')
@@ -315,25 +316,28 @@ if noisy
                 set(gcf,'name',[num2str(numel(ind)) ' particles in ' ...
                     names.name ' frame ' num2str(tmin+ii-1) ' (' ...
                     num2str(ii) ' of ' num2str(Nf) ')']); 
+                %frameFilename = sprintf('frame_%04d%s', tmin+ii-1, ext);
             case('stack')
                 set(hi,'cdata',imread(fullfile(filepath,names.name), ...
                     tmin+ii-1)); 
                 set(gcf,'name',[num2str(numel(ind)) ' particles in ' ...
                     names.name ' frame ' num2str(tmin+ii-1) ' (' ...
                     num2str(ii) ' of ' num2str(Nf) ')']); 
+                frameFilename = sprintf('frame_%04d%s', tmin+ii-1, ext);
             case('images')
                 set(hi,'cdata',imread(fullfile(filepath, ...
                     names(ii).name))); 
                 set(gcf,'name',[num2str(numel(ind)) ' particles in ' ...
                     names(ii).name ' (' num2str(ii) ' of ' ...
                     num2str(Nf) ')']); 
+                frameFilename = names(ii).name;
         end % switch movtype
         drawnow
         pause(pausetime); 
         if isnumeric(noisy) && noisy>1
             snap=getframe(gca);
             imwrite(snap.cdata, ...
-                fullfile(filepath,savedirname,names(ii).name)); 
+                fullfile(filepath,savedirname,frameFilename)); %names(ii).name)); 
         end 
     end
 end

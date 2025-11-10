@@ -14,6 +14,8 @@ function [vort,x,y,t,tr]=Vorticities(vtracks,framerange,noisy)
 % Included tr output 26 March 2012. 
 % Pre-allocated for speed (making a real difference) 27 March 2012. 
 
+% Note: requires Partial Differential Equation toolbox
+
 framerangedefault = [-inf inf]; % all frames
 noisydefault=1;
 satgoal=1; % colormap limits chosen for 1% saturation
