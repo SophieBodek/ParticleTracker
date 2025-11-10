@@ -12,8 +12,8 @@ function [vtracks_filt, ntracks_filt] = FilterTracks(vtracks, lenMin, xDistMin, 
 %   vtracks   - Input track data structure
 %   lenMin    - Minimum track length threshold (default: 20); track length
 %               refers to number of data points in the track
-%   xDistMin  - X displacement threshold (default: 10)
-%   yDistMin  - Y displacement threshold (default: 10)
+%   xDistMin  - X displacement threshold (default: 0)
+%   yDistMin  - Y displacement threshold (default: 0)
 %   lenComp   - Length comparison: 'greater' (default) or 'less'
 %   xComp     - X displacement comparison: 'greater' (default) or 'less'
 %   yComp     - Y displacement comparison: 'greater' (default) or 'less'
@@ -29,8 +29,8 @@ function [vtracks_filt, ntracks_filt] = FilterTracks(vtracks, lenMin, xDistMin, 
 
 % Default values
 lenMin_default = 20; % typically number of frames
-xDistMin_default = 10; % distance units
-yDistMin_default = 10; % distance units
+xDistMin_default = 0; % distance units
+yDistMin_default = 0; % distance units
 noisy_default = 0; % no plotting
 
 % Set default values - generates printout if defaults are used
@@ -63,18 +63,17 @@ end
 % Check that track input has correct structure (fields: len, X, Y, U, V, T)
 if isfield(vtracks, 'vtracks') 
     vtracks = vtracks.vtracks; %track data may be in a vtracks field
-    %fprintf('Input format: struct with vtracks field\n');
 elseif isfield(vtracks, 'len') && isfield(vtracks, 'X')
     vtracks = vtracks; %otherwise vtracks should have the fields we are looking for
-    %fprintf('Input format: direct vtracks struct\n');
 end
-% Check that vtracks has ALL the correct fields
-required_fields = {'len', 'X', 'Y', 'U', 'V', 'T'};
+% Check that track input has ALL the correct fields (at least len,X,Y,T)
+required_fields = {'len','X', 'Y','T'};
 struct_fields = fieldnames(vtracks);
 if ~all(ismember(required_fields, struct_fields))
     missing_fields = required_fields(~ismember(required_fields, struct_fields));
     error('Invalid vtracks struct. Missing required fields: %s', strjoin(missing_fields, ', '));
 end
+all_fields = fieldnames(vtracks); % preserves U, V, Ax, Ay, Theta (and more) if included
 
 % Validate comparison inputs
 valid_comparisons = {'greater', 'less'};
@@ -247,21 +246,22 @@ for i = 1:length(validLenInd)
     count = count + 1;
     
     if strcmp(split_behavior, 'trim') %use trimmed data
-        vtracks_filt(count).len = sum(valid_indices);
-        vtracks_filt(count).X = x;
-        vtracks_filt(count).Y = y;
-        vtracks_filt(count).T = t;
-        vtracks_filt(count).U = vtracks(trackInd).U(valid_indices);
-        vtracks_filt(count).V = vtracks(trackInd).V(valid_indices);
-        vtracks_filt(count).Theta = vtracks(trackInd).Theta(valid_indices);
-    else
-        vtracks_filt(count).len = vtracks(trackInd).len;
-        vtracks_filt(count).X = vtracks(trackInd).X;
-        vtracks_filt(count).Y = vtracks(trackInd).Y;
-        vtracks_filt(count).U = vtracks(trackInd).U;
-        vtracks_filt(count).V = vtracks(trackInd).V;
-        vtracks_filt(count).T = vtracks(trackInd).T;
-        vtracks_filt(count).Theta = vtracks(trackInd).Theta;
+        for fn = 1:length(all_fields)
+            field = all_fields{fn};
+        
+            if strcmp(field, 'len')
+                % Special handling for length
+                vtracks_filt(count).len = sum(valid_indices);
+            else
+                % Trim all other fields using valid_indices
+                vtracks_filt(count).(field) = vtracks(trackInd).(field)(valid_indices);
+            end
+        end
+    else % include/exclude - all fields from original track
+        for fn = 1:length(all_fields)
+            field = all_fields{fn};
+            vtracks_filt(count).(field) = vtracks(trackInd).(field);
+        end
     end
 end
 
@@ -346,7 +346,7 @@ if noisy
     end
 
     axis tight
-    set(gca, 'YDir','reverse') % reverse y-axis for better comparison with images (which have 0,0 in upper left)
+    %set(gca, 'YDir','reverse') % reverse y-axis for better comparison with images (which have 0,0 in upper left)
     set(gca,'dataaspectratio',[1 1 1]) %preserve aspect ratio of images
     
     % Update title to reflect split_behavior

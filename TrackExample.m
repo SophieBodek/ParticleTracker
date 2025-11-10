@@ -60,22 +60,25 @@ catch err
 end
 
 fprintf('\n');
-disp('For this example, we''ll choose a threshold of 10 -- that is, to count as a ')
-disp('potential particle, a pixel must be brighter than its neighbors and at least ')
-disp('10 bits brighter than the background. And we''ll choose max_disp = 8 -- that ')
-disp('is, to continue a track, a potential particle must lie within 8 pixels of the ')
-disp('predicted particle location. We''ll use the background image created above ')
-disp('(''background.tif''). We''ll choose minarea = 1 -- that is, we expect ')
-disp('particles to be single pixels. In this movie particles are bright, so we ')
-disp('don''t want to invert (invert = 0), and we''ll ask to see a movie showing ')
-disp('the results (noisy = 1). The outputs are "vtracks" (a struct array containing ')
-disp('the tracks), "ntracks" (the number of tracks), "lmean" (the mean track length), and ')
-disp('"lrms" (the root-mean-square track length). PredictiveTracker will report its ')
-disp('progress as it goes. Press enter to run this command:') 
+disp('For this example, we''ll choose max_disp = 8 -- that is, to continue a track, ')
+disp('a potential particle must lie within 8 pixels of the predicted particle location. ')
+disp('PredictiveTracker also contains built-in particle identification functionality: ')
+disp('we can choose a threshold of 10 -- that is, to count as a potential particle, ')
+disp('a pixel must be brighter than its neighbors and at least 10 bits brighter than ')
+disp('the background; we''ll use the background image created above (''background.tif''); ')
+disp('we''ll choose minarea = 1 -- that is, we expect particles to be single pixels. ')
+disp('In this movie particles are bright, so we don''t want to invert (invert = 0), ')
+disp('and we''ll ask to see a movie showing the results (noisy = 1). Lastly, we can ')
+disp('tell PredictiveTracker to use built-in functionality to smooth and differentiate ')
+disp('the trajectories to calculate particle velocities and accelerations (difftracks = 1). ')
+disp('The output is "vtracks" (a struct array containing the tracks, velocitities, and) ')
+disp('accelerations), "ntracks" (the number of tracks), "lmean" (the mean track length), ')
+disp('and "lrms" (the root-mean-square track length). PredictiveTracker will report its ')
+disp('progress as it goes. Press enter to run this command: ') 
 disp('   [vtracks,ntracks,lmean,lrms] = ...')
-input('       PredictiveTracker(''TrackExample/0*.tif'',10,8,''TrackExample/background.tif'',1,0,1); ');
+input('       PredictiveTracker(''TrackExample/0*.tif'',8,10,''TrackExample/background.tif'',1,0,1,1); ');
 [vtracks,ntracks,lmean,lrms] = ...
-    PredictiveTracker('TrackExample/0*.tif',10,8,'TrackExample/background.tif',1,0,1); 
+    PredictiveTracker('TrackExample/0*.tif',8,10,'TrackExample/background.tif',1,0,1,1); 
 fprintf('\n');
 
 disp('A figure appears as requested, and the movie plays back with particle tracks ')
@@ -94,8 +97,8 @@ vtracks
 
 fprintf('\n');
 disp('Each element contains a scalar giving the track length, as well as vectors ')
-disp('giving the positions, velocities, and times of the track. All units are in ')
-input('terms of pixels and frames. Press enter to see the form of the first track. ');
+disp('giving the positions, velocities, accelerations, and times of the track. All units ')
+input('are in terms of pixels and frames. Press enter to see the form of the first track. ');
 vtracks(1)
 
 fprintf('\n');

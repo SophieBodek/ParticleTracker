@@ -1,30 +1,22 @@
-function [atracks,ax,ay,u,v,x,y,t,tr,curv]=Accelerations(vtracks,framerange,order,curvature,noisy)
-% Usage: [atracks,ax,ay,x,y,t,tr,[curv]]=Accelerations(vtracks,[framerange],[order],[curvature],[noisy])
-% Working from the velocity tracks in "vtracks", Accelerations plots the
-% acceleration of each particle in frames "framerange". Acceleration values are 
-% returned in vectors "ax" and "ay"; corresponding positions, times, and 
+function [ax,ay,x,y,t,tr]=Accelerations(vtracks,framerange,noisy)
+% Usage: [ax,ay,x,y,t,tr]=Accelerations(vtracks,[framerange],[noisy])
+% Working from the acceleration tracks in "vtracks", Accelerations plots
+% the acceleration of each particle in frames "framerange". Acceleration values 
+% are returned in vectors "ax" and "ay"; corresponding positions, times, and 
 % track indices are returned in "x", "y", and "t". Specify "framerange" as a 
-% two-element vector: [starttime endtime]. Specify method for computing 
-% accelerations using "order"; order==1 takes first derivative of velocities 
-% in vtracks, while order==2 takes second derivative of positions (default) 
-% in vtracks. If curvature ==1, function also calculates and outputs curvature 
-% in "curv" vector (no output if curvature==0). If noisy==0, no plot is produced. 
+% two-element vector: [starttime endtime]. If noisy==0, no plot is produced. 
 %
-% The input must be a structure of the form produced by PredictiveTracker.m.
+% The input must be a structure of the form produced by DifferentiateTracks.m
+% (or PredictiveTracker.m) with at least fields "X", "Y", "T", "Ax", and "Ay".
 %
-% Function also outputs "Atracks", a structure with the same form as "vtracks" with 
-% added fields for horizontal and vertical accelerations (and optionally curvature).
-
 % Based on PredictiveTracker.m and Velocities.m functions
 % originally written by Douglas H. Kelley in 2011-12.
 
 framerangedefault = [-inf inf]; % all frames
 noisydefault=1; 
-orderdefault=2; 
-curvaturedefault = 0; 
 
 if nargin<1
-    error(['Usage: [atracks,ax,ay,x,y,t,tr] = ' mfilename ...
+    error(['Usage: [ax,ay,x,y,t,tr] = ' mfilename ...
         '(vtracks,[framerange],[noisy]'])
 end
 if ~exist('framerange','var') || isempty(framerange)
@@ -32,161 +24,38 @@ if ~exist('framerange','var') || isempty(framerange)
 elseif numel(framerange)==1
     framerange=framerange*[1 1];
 end
-if ~exist('order','var') || isempty(order)
-    order=orderdefault;
-end
-if ~exist('curvature','var') || isempty(curvature)
-    curvature = curvaturedefault;
-end
 if ~exist('noisy','var') || isempty(noisy)
     noisy=noisydefault;
 end
 
-fn=fieldnames(vtracks);
+fn=fieldnames(vtracks); % needs position, time, and accelerations
 if ~any(strcmp(fn,'X')) || ~any(strcmp(fn,'Y')) || ~any(strcmp(fn,'T')) ...
-        || ~any(strcmp(fn,'U')) || ~any(strcmp(fn,'V')) || isempty(vtracks)
+        || ~any(strcmp(fn,'Ax')) || ~any(strcmp(fn,'Ay')) || isempty(vtracks)
     error('Sorry, the input does not appear to contain tracks.')
 end
-if any(strcmp(fn,'Theta')) % if there is a field named Theta
-    minarea = 2; %particles must have had a minarea =/ 1
-else 
-    minarea = 1;
-end
 
-% Re-assemble vtracks structure, except with accelerations calculated ------------------
-filterwidth = 1; fitwidth = 3; % parameters for the differentiation kernel
-% Prune lengths --> recall derivatives will shorten tracks
-vtracks = vtracks([vtracks.len] >= (2*fitwidth+1));
-ntracks = numel(vtracks);
-
-% convolution kernel - first derivative
-Av = 1.0/(0.5*filterwidth^2 * ...
-    (sqrt(pi)*filterwidth*erf(fitwidth/filterwidth) - ...
-    2*fitwidth*exp(-fitwidth^2/filterwidth^2)));
-vkernel = -fitwidth:fitwidth;
-vkernel = Av.*vkernel.*exp(-vkernel.^2./filterwidth^2); 
-
-% convolution kernel - second derivative acceleration
-Aa = 1.0/(0.5 * ...
-    (sqrt(pi)*filterwidth^3*erf(fitwidth/filterwidth) - ...
-    2*fitwidth*exp(-fitwidth^2/filterwidth^2)*(filterwidth^2 + fitwidth^2)));
-akernel = -fitwidth:fitwidth;
-akernel = Aa .* (2*akernel.^2/filterwidth^2 - 1) .* exp(-akernel.^2./filterwidth^2);
-
-% initialize Atracks depending on whether curvature calculation is requested
-if curvature == 1
-    if minarea==1
-        atracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[],'Ax',[],'Ay',[],'Curvature',[]),ntracks,1);
-    else
-        atracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[], ...
-            'V',[],'Theta',[],'Ax',[],'Ay',[],'Curvature',[]),ntracks,1);
-    end
-else
-    if minarea==1
-        atracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[],'V',[],'Ax',[],'Ay',[]),ntracks,1);
-    else
-        atracks = repmat(struct('len',[],'X',[],'Y',[],'T',[],'U',[], ...
-            'V',[],'Theta',[],'Ax',[],'Ay',[]),ntracks,1);
-    end
-end
-
-% loop over tracks
-for ii = 1:ntracks
-    if order == 1
-        % Compute accelerations (first derivative of velocity)
-        ax = -conv(vtracks(ii).U, vkernel, 'valid'); 
-        ay = -conv(vtracks(ii).V, vkernel, 'valid');  
-    elseif order == 2
-        % Compute accelerations (second derivative of position)
-        ax = conv(vtracks(ii).X,akernel,'valid');  
-        ay = conv(vtracks(ii).Y,akernel,'valid');
-    end
-    % Calculate curvature
-    U = vtracks(ii).U(fitwidth+1:end-fitwidth); %need to trim based on accelerations
-    V = vtracks(ii).V(fitwidth+1:end-fitwidth);
-    if curvature == 1
-        speed = sqrt(U.^2 + V.^2);
-        kappa = abs(U.*ay - V.*ax) ./ (speed.^3 + eps);
-        kappa(speed < 0.1) = 0;  % Mask low speeds (adjust threshold as needed)
-
-        % Build and add curvature to atracks struct
-        if minarea==1
-            atracks(ii) = struct('len',length(ax), ... %vtracks(ii).len - 2*fitwidth, ...
-                'X',vtracks(ii).X(fitwidth+1:end-fitwidth), ...
-                'Y',vtracks(ii).Y(fitwidth+1:end-fitwidth), ...
-                'T',vtracks(ii).T(fitwidth+1:end-fitwidth), ...
-                'U',vtracks(ii).U(fitwidth+1:end-fitwidth), ...
-                'V',vtracks(ii).V(fitwidth+1:end-fitwidth), ...
-                'Ax',ax, ...
-                'Ay',ay,...
-                'Curvature', kappa);
-        else
-            atracks(ii) = struct('len',length(ax), ... %vtracks(ii).len - 2*fitwidth, ...
-                'X',vtracks(ii).X(fitwidth+1:end-fitwidth), ...
-                'Y',vtracks(ii).Y(fitwidth+1:end-fitwidth), ...
-                'T',vtracks(ii).T(fitwidth+1:end-fitwidth), ...
-                'U',vtracks(ii).U(fitwidth+1:end-fitwidth), ...
-                'V',vtracks(ii).V(fitwidth+1:end-fitwidth), ...
-                'Theta',vtracks(ii).Theta(fitwidth+1:end-fitwidth),...
-                'Ax',ax, ...
-                'Ay',ay, ...
-                'Curvature', kappa);
-        end
-    else %no curvature calculation requested
-        if minarea==1
-            atracks(ii) = struct('len',length(ax), ... %vtracks(ii).len - 2*fitwidth, ...
-                'X',vtracks(ii).X(fitwidth+1:end-fitwidth), ...
-                'Y',vtracks(ii).Y(fitwidth+1:end-fitwidth), ...
-                'T',vtracks(ii).T(fitwidth+1:end-fitwidth), ...
-                'U',vtracks(ii).U(fitwidth+1:end-fitwidth), ...
-                'V',vtracks(ii).V(fitwidth+1:end-fitwidth), ...
-                'Ax',ax, ...
-                'Ay',ay);
-        else
-            atracks(ii) = struct('len',length(ax), ... %vtracks(ii).len - 2*fitwidth, ...
-                'X',vtracks(ii).X(fitwidth+1:end-fitwidth), ...
-                'Y',vtracks(ii).Y(fitwidth+1:end-fitwidth), ...
-                'T',vtracks(ii).T(fitwidth+1:end-fitwidth), ...
-                'U',vtracks(ii).U(fitwidth+1:end-fitwidth), ...
-                'V',vtracks(ii).V(fitwidth+1:end-fitwidth), ...
-                'Theta',vtracks(ii).Theta(fitwidth+1:end-fitwidth), ...
-                'Ax',ax, ...
-                'Ay',ay);
-        end
-    end
-end
-
-
-% Assemble output vectors: ax, ay, x, y, t, tr, [curv] ----------------------
-Nall=sum([atracks.len]);
+% Assemble output vectors: ax, ay, x, y, t, tr -------------------------
+Nall=sum([vtracks.len]);
 ax=NaN(Nall,1); % initialize arrays
 ay=NaN(Nall,1);
 x=NaN(Nall,1);
 y=NaN(Nall,1);
 t=NaN(Nall,1);
 tr=NaN(Nall,1);
-if curvature == 1
-    curv=NaN(Nall,1);
-else
-    curv=[];  % Return empty if curvature not calculated
-end
 
 pos=1; % marker to current position in arrays
-for ii=1:numel(atracks) % assemble arrays from atracks structure
-    ind = (atracks(ii).T>=min(framerange)) & (atracks(ii).T<=max(framerange));
+for ii=1:numel(vtracks) % assemble arrays from atracks structure
+    ind = (vtracks(ii).T>=min(framerange)) & (vtracks(ii).T<=max(framerange));
     if any(ind)
         Np=sum(ind);
-        ax(pos:pos+Np-1)=atracks(ii).Ax(ind(:));
-        ay(pos:pos+Np-1)=atracks(ii).Ay(ind(:));
-        u(pos:pos+Np-1)=atracks(ii).U(ind(:));
-        v(pos:pos+Np-1)=atracks(ii).V(ind(:));
-        x(pos:pos+Np-1)=atracks(ii).X(ind(:));
-        y(pos:pos+Np-1)=atracks(ii).Y(ind(:));
-        t(pos:pos+Np-1)=atracks(ii).T(ind(:));
+        ax(pos:pos+Np-1)=vtracks(ii).Ax(ind(:));
+        ay(pos:pos+Np-1)=vtracks(ii).Ay(ind(:));
+        %u(pos:pos+Np-1)=vtracks(ii).U(ind(:));
+        %v(pos:pos+Np-1)=vtracks(ii).V(ind(:));
+        x(pos:pos+Np-1)=vtracks(ii).X(ind(:));
+        y(pos:pos+Np-1)=vtracks(ii).Y(ind(:));
+        t(pos:pos+Np-1)=vtracks(ii).T(ind(:));
         tr(pos:pos+Np-1)=ii;
-        if curvature == 1
-            curv(pos:pos+Np-1)=atracks(ii).Curvature(ind(:));
-        end
         pos=pos+Np;
     end
 end
@@ -194,98 +63,57 @@ end
 ind=~isnan(ax); % remove unwanted frames
 ax=ax(ind);
 ay=ay(ind);
-u=u(ind);
-v=v(ind);
+%u=u(ind);
+%v=v(ind);
 x=x(ind);
 y=y(ind);
 t=t(ind);
 tr=tr(ind);
-if curvature == 1
-    curv=curv(ind);
-end
-
 [t,ind]=sort(t(:)); % sort by time
 ax=ax(ind);
 ay=ay(ind);
-u=u(ind);
-v=v(ind);
+%u=u(ind);
+%v=v(ind);
 x=x(ind);
 y=y(ind);
 tr=tr(ind);
-if curvature == 1
-    curv=curv(ind);
-end
 
 % If requested, plot the particles
 if noisy
-    figure;
-    
-    if curvature == 1
-        % Plot curvature with colormap
-        scatter(x, y, 30, curv, 'filled');
-        hold on;
-        quiver(x, y, ax, ay, 0.5, 'k', 'LineWidth', 1, 'MaxHeadSize', 0.3);
+    figure; %plot accelerations with colormap
+    accel_magnitude = sqrt(ax.^2 + ay.^2);
+    accel_signed = sign(ax + ay) .* accel_magnitude; %sign based on dominant direction
         
-        colormap(cool);
-        cb = colorbar;
-        ylabel(cb, 'Curvature (1/[Length Unit])', 'FontSize', 12);
+    scatter(x, y, 40, accel_signed, 'filled');
+    hold on;
+    quiver(x, y, ax, ay, 0.5, 'k', 'LineWidth', 1, 'MaxHeadSize', 0.3);
+    colormap(flipud(turbo)); 
         
-        set(gca, 'DataAspectRatio', [1 1 1]);
-        axis tight;
-        xlabel('X [units]', 'FontSize', 12);
-        ylabel('Y [units]', 'FontSize', 12);
-        
-        % Title based on frame range
-        if framerange(1)==framerange(2)
-            title(['curvature of ' num2str(numel(x)) ' particles in frame ' ...
-                num2str(framerange(1))], 'FontSize', 14);
-        else
-            if isinf(framerange(1))
-                framerange(1)=t(1);
-            end
-            if isinf(framerange(2))
-                framerange(2)=t(end);
-            end
-            title(['curvature of ' num2str(numel(x)) ' particles in frames ' ...
-                num2str(min(framerange)) ' to ' num2str(max(framerange))]);
-        end
-        
-    else
-        % Otherwise plot accelerations with colormap
-        accel_magnitude = sqrt(ax.^2 + ay.^2);
-        accel_signed = sign(ax + ay) .* accel_magnitude; %sign based on dominant direction
-        
-        scatter(x, y, 40, accel_signed, 'filled');
-        hold on;
-        quiver(x, y, ax, ay, 0.5, 'k', 'LineWidth', 1, 'MaxHeadSize', 0.3);
-        colormap(flipud(turbo)); 
-        
-        % Center colorbar at zero
-        max_val = max(abs(accel_signed));
-        if max_val > 0
-            clim([-max_val, max_val]);
-        end
+    % Center colorbar at zero
+    max_val = max(abs(accel_signed));
+    if max_val > 0
+        clim([-max_val, max_val]);
+    end
 
-        cb = colorbar;
-        ylabel(cb, 'Acceleration magnitude (signed) [L/T^2]', 'FontSize', 12);
-        set(gca, 'DataAspectRatio', [1 1 1]);
-        axis tight;
-        xlabel('X [units]', 'FontSize', 12);
-        ylabel('Y [units]', 'FontSize', 12);
+    cb = colorbar;
+    ylabel(cb, 'Acceleration magnitude (signed) [L/T^2]', 'FontSize', 12);
+    set(gca, 'DataAspectRatio', [1 1 1]);
+    axis tight;
+    xlabel('X [units]', 'FontSize', 12);
+    ylabel('Y [units]', 'FontSize', 12);
         
-        if framerange(1)==framerange(2)
-            title(['accelerations at ' num2str(numel(x)) ' particles in frame ' ...
-                num2str(framerange(1))], 'FontSize', 14);
-        else
-            if isinf(framerange(1))
-                framerange(1)=t(1);
-            end
-            if isinf(framerange(2))
-                framerange(2)=t(end);
-            end
-            title(['accelerations at ' num2str(numel(x)) ' particles in frames ' ...
-                num2str(min(framerange)) ' to ' num2str(max(framerange))]);
+     if framerange(1)==framerange(2)
+        title(['accelerations at ' num2str(numel(x)) ' particles in frame ' ...
+            num2str(framerange(1))], 'FontSize', 14);
+     else
+        if isinf(framerange(1))
+            framerange(1)=t(1);
         end
+        if isinf(framerange(2))
+            framerange(2)=t(end);
+        end
+        title(['accelerations at ' num2str(numel(x)) ' particles in frames ' ...
+            num2str(min(framerange)) ' to ' num2str(max(framerange))]);
     end
 end
 
